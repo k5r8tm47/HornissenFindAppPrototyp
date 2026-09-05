@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="HornissenFindApp Prototyp: Fangort der asiatischen Hornisse markieren, Flugrichtung angeben, Nestposition bestimmen.">
+<meta name="description" content="HornissenFindApp: Sichtung der asiatischen Hornisse melden, Flugrichtung als 800-m-Strich, Admin trianguliert Nestbereiche.">
 <title>HornissenFindApp – Prototyp</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#b45309">
@@ -25,50 +25,78 @@
     border: 1px solid #ccc; border-radius: 6px; background: #fff; cursor: pointer; font-size: 14px;
   }
   .toolbar button.active { background: #ffd966; border-color: #e0a800; font-weight: 600; }
-  .toolbar label.toggle {
-    display: flex; align-items: center; gap: 6px; margin-top: 6px; padding: 0 4px;
-    font-size: 13px; cursor: pointer; min-height: 32px;
+  .toolbar .row { display: flex; gap: 6px; }
+  .toolbar .row button { flex: 1; }
+  .badge {
+    display: inline-block; min-width: 20px; height: 20px; line-height: 20px; border-radius: 10px;
+    background: #dc2626; color: #fff; font-weight: 700; font-size: 12px; text-align: center; padding: 0 5px; margin-left: 6px;
   }
   .panel {
     position: absolute; top: 10px; right: 10px; bottom: 10px; z-index: 1000;
-    width: 300px; max-width: 90vw; background: rgba(255,255,255,.97); border-radius: 8px;
-    box-shadow: 0 1px 6px rgba(0,0,0,.3); padding: 10px; overflow-y: auto; display: none;
+    width: 320px; max-width: 90vw; background: rgba(255,255,255,.97); border-radius: 8px;
+    box-shadow: 0 1px 6px rgba(0,0,0,.3); padding: 12px; overflow-y: auto; display: none; font-size: 14px;
   }
-  .panel h3 { margin: 0 0 8px; }
-  .panel .fang { border-top: 1px solid #eee; padding: 6px 0; }
-  .panel .fang .meta { font-size: 12px; color: #666; }
-  .panel .fang .meta.direction { color: #b45309; }
-  .panel button.small { font-size: 12px; padding: 6px 8px; margin: 2px 4px 0 0; min-height: 32px; }
-  .panel .sec-title {
-    border-top: 2px solid #dbdbdb; margin: 10px 0 4px; padding-top: 8px;
-    font-weight: 600; font-size: 13px; color: #2563eb;
+  .panel h3 { margin: 0 0 10px; }
+  .panel label { display: block; margin: 8px 0 2px; font-size: 13px; color: #444; }
+  .panel input[type=time], .panel input[type=number], .panel input[type=text] {
+    width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 15px; min-height: 40px;
   }
+  .panel .btns { display: flex; gap: 8px; margin-top: 12px; }
+  .panel button.action {
+    flex: 1; padding: 10px; min-height: 44px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; color: #fff;
+  }
+  .panel button.send { background: #15803d; }
+  .panel button.cancel { background: #6b7280; }
+  .panel button.primary { background: #b45309; }
+  .panel button.small { font-size: 12px; padding: 6px 8px; margin: 2px 4px 0 0; border: 1px solid #ccc; border-radius: 6px; background: #fff; cursor: pointer; min-height: 32px; }
+  .panel .tabs { display: flex; gap: 4px; margin-bottom: 10px; flex-wrap: wrap; }
+  .panel .tabs button { flex: 1; min-width: 90px; padding: 8px 6px; border: 1px solid #ccc; border-radius: 6px; background: #fff; cursor: pointer; font-size: 12px; }
+  .panel .tabs button.active { background: #ffd966; border-color: #e0a800; font-weight: 600; }
+  .panel .item { border-top: 1px solid #eee; padding: 8px 0; }
+  .panel .item .meta { font-size: 12px; color: #666; }
+  .panel .item .dir { font-size: 12px; color: #b45309; }
+  .panel .item .tag { display: inline-block; font-size: 11px; padding: 2px 6px; border-radius: 8px; margin-left: 6px; }
+  .tag-aktiv { background: #fecaca; color: #991b1b; }
+  .tag-entfernt { background: #e5e7eb; color: #374151; }
+  .tag-nichtGefunden { background: #e5e7eb; color: #374151; }
+  .tag-nichtZugaenglich { background: #d1d5db; color: #4b5563; }
+  .tag-grau { background: #e5e7eb; color: #6b7280; }
+  .tag-geschätzt { background: #fef3c7; color: #92400e; }
   .hint {
     position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); z-index: 1000;
-    background: rgba(0,0,0,.7); color: #fff; padding: 8px 14px; border-radius: 20px; display: none; font-size: 14px;
+    background: rgba(0,0,0,.75); color: #fff; padding: 8px 14px; border-radius: 20px; display: none; font-size: 14px;
     max-width: 92vw; text-align: center;
   }
   .legend {
     position: absolute; bottom: 10px; left: 10px; z-index: 1000; pointer-events: none;
     background: rgba(255,255,255,.92); border-radius: 8px; box-shadow: 0 1px 6px rgba(0,0,0,.3);
-    padding: 6px 10px; font-size: 12px; line-height: 1.7;
+    padding: 6px 10px; font-size: 12px; line-height: 1.8;
   }
   .legend .lg { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
   .legend .lg-own { background: #c22; }
-  .legend .lg-comm { background: #2563eb; }
-  .legend .lg-nest { background: #fff; border: 2px solid #16a34a; box-shadow: 0 0 0 1px #16a34a; }
-  .arrow-icon { width: 36px; height: 36px; text-align: center; line-height: 36px; font-size: 30px; font-weight: bold; }
-  .nestmark {
-    width: 28px; height: 28px; border-radius: 50%; text-align: center; line-height: 24px;
-    background: #fff; color: #14532d; font-weight: 700; font-size: 12px;
-    border: 3px solid #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,.3) !important;
+  .legend .lg-other { background: #2563eb; }
+  .legend .lg-nest { background: #fff; border: 2px solid #ea580c; border-radius: 50%; }
+  .legend .lg-line { width: 16px; height: 3px; border-radius: 2px; }
+  .legend .lg-line-own { background: #b45309; }
+  .legend .lg-line-other { background: #2563eb; }
+  .legend .lg-line-gray { background: #9ca3af; }
+  .notif { border: 1px solid #fca5a5; background: #fef2f2; border-radius: 8px; padding: 8px; margin: 6px 0; }
+  .notif .big { font-size: 16px; font-weight: 700; }
+  .notif a { color: #b91c1c; word-break: break-all; }
+  .toast {
+    position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%); z-index: 2000;
+    background: #15803d; color: #fff; padding: 10px 18px; border-radius: 20px; display: none; font-size: 14px;
+  }
+  .fab {
+    position: absolute; bottom: 60px; right: 12px; z-index: 1000; width: 52px; height: 52px; border-radius: 50%;
+    background: #dc2626; color: #fff; border: none; font-size: 26px; font-weight: 800; cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,.4); display: none;
   }
   #selftest { display: none; }
   @media (max-width: 600px) {
-    .toolbar { left: 6px; top: 6px; width: calc(100vw - 12px); max-width: none; display: flex; flex-wrap: wrap; gap: 6px; }
-    .toolbar button { flex: 1 1 45%; margin: 0; }
-    .toolbar label.toggle { flex: 1 1 100%; margin: 4px 0 0; }
-    .panel { top: 60px; left: 6px; right: 6px; bottom: 56px; width: auto; max-width: none; }
+    .toolbar { left: 6px; top: 6px; width: calc(100vw - 12px); max-width: none; }
+    .toolbar .row { display: none; }
+    .panel { top: 58px; left: 6px; right: 6px; bottom: 56px; width: auto; max-width: none; }
     .legend { bottom: 4px; font-size: 11px; padding: 4px 8px; }
   }
 </style>
@@ -77,29 +105,43 @@
 <div id="map"></div>
 
 <div class="toolbar">
-  <button id="btnFang">Fangort setzen</button>
-  <button id="btnList">Fänge anzeigen</button>
-  <button id="btnExport">Daten exportieren</button>
-  <button id="btnImport">Daten importieren</button>
-  <label class="toggle"><input type="checkbox" id="chkCommunity" checked> Andere Nutzer anzeigen</label>
+  <button id="btnModeSighting" class="active">Sichtung erfassen</button>
+  <button id="btnModeAdmin">Admin-Ansicht <span id="adminBadge" class="badge" style="display:none">!</span></button>
+  <div class="row">
+    <button id="btnExport">Export</button>
+    <button id="btnImport">Import</button>
+  </div>
 </div>
 <input type="file" id="fileImport" accept=".json,application/json" style="display:none">
 
-<div class="panel" id="panel">
-  <h3>Fänge</h3>
-  <div id="fangList"></div>
-  <div class="sec-title" id="commSectionLabel">Sichtungen anderer Nutzer</div>
-  <div id="communityList"></div>
+<div class="panel" id="sightingPanel">
+  <h3>Sichtung erfassen</h3>
+  <div id="sightingForm"></div>
+</div>
+
+<div class="panel" id="adminPanel">
+  <h3>Admin-Ansicht</h3>
+  <div class="tabs">
+    <button data-tab="sights" class="active">Sichtungen</button>
+    <button data-tab="areas">Nestbereiche</button>
+    <button data-tab="notifs">Hinweise</button>
+    <button data-tab="log">Protokoll</button>
+  </div>
+  <div id="tabSights"></div>
+  <div id="tabAreas" style="display:none"></div>
+  <div id="tabNotifs" style="display:none"></div>
+  <div id="tabLog" style="display:none"></div>
 </div>
 
 <div class="hint" id="hint"></div>
-
 <div class="legend">
-  <div><span class="lg lg-own"></span>Eigene Fänge</div>
-  <div><span class="lg lg-comm"></span>Sichtungen anderer</div>
-  <div><span class="lg lg-nest"></span>Mögliches Nest</div>
+  <div><span class="lg lg-own"></span><b>Eigene Sichtung</b> <span class="lg lg-line-own" style="vertical-align:2px"></span> Flugrichtung</div>
+  <div><span class="lg lg-other"></span> Sichtung anderer <span class="lg lg-line-other" style="vertical-align:2px"></span> Flugrichtung</div>
+  <div><span class="lg lg-line-gray" style="vertical-align:2px"></span> Linie grau (Bereich nicht zugänglich)</div>
+  <div><span class="lg lg-nest"></span> Wahrscheinlicher Nestbereich</div>
 </div>
-
+<div class="fab" id="btnFab">&nbsp;!&nbsp;</div>
+<div class="toast" id="toast"></div>
 <div id="selftest"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -107,115 +149,134 @@
 "use strict";
 
 const STORAGE_KEY = "hornissenfindapp";
-const NEST_CLUSTER_KM = 1.5;
-// ponytail: Gemeinschaftsdaten sind Beispieldaten ohne Backend; echte Sync braucht ein Backend.
-// +-Alle Richtungen laufen auf einen gemeinsamen Punkt (nest) zu, damit die Triangulation sichtbar konvergiert.
-const NEST_P = { lat: 49.778, lng: 9.958 };
-const COMMUNITY = [
-  { id: 9001, author: "Imkerverein Maintal", date: "2026-08-14", note: "Fang am Nektarfeld",      lat: 49.820, lng: 9.880, direction: NEST_P },
-  { id: 9002, author: "Bienenhof Altholz",  date: "2026-08-20", note: "",                          lat: 49.742, lng: 9.905, direction: NEST_P },
-  { id: 9003, author: "AG Hornisse Mainfranken", date: "2026-08-22", note: "Rebberg",              lat: 49.760, lng: 10.020, direction: NEST_P },
-  { id: 9004, author: "Imkerin S. Fuchs",   date: "2026-08-27", note: "Obstplantage",              lat: 49.835, lng: 10.015, direction: NEST_P },
-  { id: 9005, author: "Verein Südspessart", date: "2026-08-29", note: "",                          lat: 49.735, lng: 9.965, direction: NEST_P },
-  { id: 9006, author: "Hobbyimker T. Roth", date: "2026-09-02", note: "Am Waldrand",               lat: 49.815, lng: 9.945, direction: NEST_P },
-  { id: 9007, author: "Lehrbienenstand",    date: "2026-09-04", note: "Garten",                    lat: 49.790, lng: 9.925, direction: NEST_P }
+const LINE_M = 800;
+const AREA_RADIUS_M = 250;
+const CLUSTER_RADIUS_M = 150;
+const GRAY_ZONE_M = 350;
+const HORNET_SPEED_M_PER_MIN = 333;
+const MAP_LINK = (lat, lng) => `https://www.google.com/maps/search/?api=1&query=${lat.toFixed(5)},${lng.toFixed(5)}`;
+
+// ponytail: Demodaten statt echtes Backend; Übertragung an den Admin ist lokal abgebildet.
+// Die Demo-Sichtungen kreuzen sich alle in NEST_P, damit die Triangulation sofort einen Nestbereich zeigt.
+const NEST_P = { lat: 49.775, lng: 9.960 };
+const DEMO = [
+  { id: 9001, author: "Imkerverein Maintal",    time: "09:40", lat: 49.7786, lng: 9.9600, bearing: 180, bearingMode: "map",      flightMin: null, note: "Am Nektarfeld" },
+  { id: 9002, author: "Bienenhof Altholz",      time: "11:15", lat: 49.7750, lng: 9.9656, bearing: 270, bearingMode: "map",      flightMin: null, note: "" },
+  { id: 9003, author: "AG Hornisse Mainfranken", time: "14:05", lat: 49.7705, lng: 9.9600, bearing: 0,   bearingMode: "map",      flightMin: null, note: "Rebberg" },
+  { id: 9004, author: "Imkerin S. Fuchs",       time: "17:30", lat: 49.7750, lng: 9.9555, bearing: 90,  bearingMode: "map",      flightMin: null, note: "Obstplantage" },
+  { id: 9005, author: "H. Weber",               time: "10:20", lat: 49.7708, lng: 9.9630, bearing: 210, bearingMode: "compass",   flightMin: null, note: "Kompass-Eingabe" },
+  { id: 9006, author: "I. Schmidt",             time: "16:45", lat: 49.7810, lng: 9.9580, bearing: 195, bearingMode: "map",      flightMin: 3,    note: "Flugzeit gemessen" }
 ];
 
-let mode = null;
-let pendingFangId = null;
+let mode = "sighting";
+let role = "sichtender";
+let adminTab = "sights";
+let draft = null;
+let pending = null;
 let autoId = 1;
-const fangLayers = new Map();
+let areaIdSeq = 1;
+let notifIdSeq = 1;
 
 const state = load();
-const map = L.map("map").setView([49.79, 9.93], 12);
+const map = L.map("map").setView([49.79, 9.93], 13);
 
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   maxZoom: 19,
   attribution: "&copy; OpenStreetMap"
 }).addTo(map);
 
-const fangIcon = L.divIcon({ className: "", html: "<div style='width:26px;height:26px;background:#c22;border:2px solid #fff;border-radius:50%;'></div>", iconSize: [26,26], iconAnchor: [13,13] });
-const commIcon = L.divIcon({ className: "", html: "<div style='width:24px;height:24px;background:#2563eb;border:2px solid #fff;border-radius:6px;'></div>", iconSize: [24,24], iconAnchor: [12,12] });
-const communityLayer = L.layerGroup().addTo(map);
+const draftMarkerLayer = L.layerGroup().addTo(map);
+const sightingsLayer = L.layerGroup().addTo(map);
 const nestLayer = L.layerGroup().addTo(map);
+
+const iconLocal = L.divIcon({ className: "", html: "<div style='width:24px;height:24px;background:#c22;border:2px solid #fff;border-radius:50%;'></div>", iconSize: [24,24], iconAnchor: [12,12] });
+const iconOther = L.divIcon({ className: "", html: "<div style='width:22px;height:22px;background:#2563eb;border:2px solid #fff;border-radius:50%;'></div>", iconSize: [22,22], iconAnchor: [11,11] });
 
 function load() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const d = JSON.parse(raw);
-      autoId = (d.autoId || 1);
+      autoId = d.autoId || 1;
+      areaIdSeq = d.areaIdSeq || 1;
+      notifIdSeq = d.notifIdSeq || 1;
       return d;
     }
   } catch (e) { console.warn("laden fehlgeschlagen", e); }
-  return { fangs: [] };
+  return seed();
+}
+
+function seed() {
+  const s = {
+    autoId: 1,
+    areaIdSeq: 1,
+    notifIdSeq: 1,
+    sightings: DEMO.map(x => ({
+      id: x.id, author: x.author, time: x.time, lat: x.lat, lng: x.lng,
+      bearing: x.bearing, bearingMode: x.bearingMode, flightMin: x.flightMin,
+      note: x.note, source: "demo", gray: false, hidden: false
+    })),
+    nestAreas: [],
+    notifications: [],
+    log: []
+  };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+  return s;
 }
 
 function save() {
+  state.autoId = autoId; state.areaIdSeq = areaIdSeq; state.notifIdSeq = notifIdSeq;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
-function setMode(m, activeButton) {
-  mode = m;
-  document.getElementById("btnFang").classList.remove("active");
-  if (activeButton) activeButton.classList.add("active");
-  if (m === "fang") showHint("1. Klicke auf die Karte an den Ort, an dem du die Hornisse gefangen hast.");
-  else if (m === "richtung") showHint("2. Klicke in die Richtung, in die die freigelassene Hornisse geflogen ist.");
-  else showHint("");
+function log(text) {
+  state.log.unshift({ at: new Date().toISOString(), text });
+  if (state.log.length > 500) state.log.length = 500;
 }
 
-function showHint(text) {
-  const h = document.getElementById("hint");
-  h.textContent = text;
-  h.style.display = text ? "block" : "none";
+function fmtTime(iso) { return iso.replace("T", " ").slice(5, 16); }
+
+/* ---------- Daten ---------- */
+
+function activeSightings() {
+  return state.sightings.filter(s => !s.gray && !s.hidden);
 }
 
-function addFang(latlng) {
-  const note = prompt("Notiz zum Fang (optional):", new Date().toISOString().slice(0, 10));
-  if (note === null) { setMode(mode, btnFang); return; }
-  const fang = { id: autoId++, lat: latlng.lat, lng: latlng.lng, note: note.trim(), direction: null };
-  state.fangs.push(fang);
-  createFangLayers(fang);
-  save();
-  pendingFangId = fang.id;
-  setMode("richtung");
+function visibleSightings() {
+  return role === "admin" ? state.sightings.filter(s => !s.hidden) : state.sightings.filter(s => s.source === "local" && !s.hidden);
 }
 
-function createFangLayers(fang) {
-  const marker = L.marker([fang.lat, fang.lng], { icon: fangIcon }).addTo(map);
-  marker.bindPopup(buildPopup(fang));
-  const layers = { marker, line: null, arrow: null };
-  fangLayers.set(fang.id, layers);
-  drawDirection(fang);
-  rebuildNests();
+function effLine(s) {
+  let len = LINE_M;
+  if (s.flightMin && s.flightMin > 0) len = Math.min(LINE_M, (s.flightMin / 2) * HORNET_SPEED_M_PER_MIN);
+  return len;
 }
 
-function buildPopup(fang) {
-  const richtungBtn = `<button class="small" onclick="setDirectionMode(${fang.id})">${fang.direction ? "Flugrichtung ändern" : "Flugrichtung festlegen"}</button>`;
-  return `<b>${escapeHtml(fang.note || "")}</b><br>
-    <span class="meta">${fang.lat.toFixed(5)}, ${fang.lng.toFixed(5)}</span><br>
-    ${richtungBtn}
-    <button class="small" onclick="deleteFang(${fang.id})">Löschen</button>`;
+function bearingOf(s) {
+  if (s.bearing != null) return s.bearing;
+  return estimateBearing(s.time);
 }
 
-function drawDirection(fang) {
-  const layers = fangLayers.get(fang.id);
-  if (!fang.direction) return;
-  if (layers.line) map.removeLayer(layers.line);
-  if (layers.arrow) map.removeLayer(layers.arrow);
-  const start = L.latLng(fang.lat, fang.lng);
-  const end = L.latLng(fang.direction.lat, fang.direction.lng);
-  layers.line = L.polyline([start, end], { color: "#b45309", weight: 3, dashArray: "6 4" }).addTo(map);
-  layers.arrow = L.marker(end, { icon: arrowIcon("#b45309", start, end) }).addTo(map);
+// ponytail: grobe Heuristik Uhrzeit→Flugrichtung (Sonne Ost→Süd→West 06–20 Uhr);
+// physikalisch ungenau, nur Prototyp; echte Richtungsmodelle brauchen Daten/Biologie.
+function estimateBearing(timeStr) {
+  const h = parseFloat((timeStr || "12:00").replace(":", ".")) - 0.0;
+  const t = h < 6 || h > 20 ? null : 90 + ((h - 6) / 14) * 180;
+  return t;
 }
 
-function arrowIcon(color, start, end) {
-  return L.divIcon({
-    className: "",
-    html: `<div class="arrow-icon" style="color:${color}; transform:rotate(${bearing(start, end)}deg);">▲</div>`,
-    iconSize: [36, 36],
-    iconAnchor: [18, 31]
-  });
+function hasBearing(s) { return s.bearing != null; }
+
+/* ---------- Geometrie ---------- */
+
+function toRad(d) { return d * Math.PI / 180; }
+
+function destPoint(start, bearingDeg, distM) {
+  const R = 6371000, br = toRad(bearingDeg), d = distM / R;
+  const φ1 = toRad(start.lat), λ1 = toRad(start.lng);
+  const φ2 = Math.asin(Math.sin(φ1) * Math.cos(d) + Math.cos(φ1) * Math.sin(d) * Math.cos(br));
+  const λ2 = λ1 + Math.atan2(Math.sin(br) * Math.sin(d) * Math.cos(φ1), Math.cos(d) - Math.sin(φ1) * Math.sin(φ2));
+  return { lat: φ2 * 180 / Math.PI, lng: λ2 * 180 / Math.PI };
 }
 
 function bearing(a, b) {
@@ -227,118 +288,464 @@ function bearing(a, b) {
   return ((Math.atan2(y, x) * 180 / Math.PI) + 360) % 360;
 }
 
-function setDirectionMode(id) {
-  pendingFangId = id;
-  setMode("richtung");
+let frame = { lat0: 49.79, lng0: 9.93 };
+function setFrame() {
+  const ss = state.sightings;
+  if (ss.length) {
+    frame.lat0 = ss.reduce((a, s) => a + s.lat, 0) / ss.length;
+    frame.lng0 = ss.reduce((a, s) => a + s.lng, 0) / ss.length;
+  }
 }
+function toXY(p) {
+  const d = Math.PI / 180;
+  return { x: (p.lng - frame.lng0) * 111320 * Math.cos(frame.lat0 * d), y: (p.lat - frame.lat0) * 111320 };
+}
+function seg(p1, s) {
+  const a = toXY(p1);
+  const e = toXY(destPoint(p1, bearingOf(s), effLine(s)));
+  return { a, e, s };
+}
+function segIntersect(a, b) {
+  const { x: x1, y: y1 } = a.a, { x: x2, y: y2 } = a.e;
+  const { x: x3, y: y3 } = b.a, { x: x4, y: y4 } = b.e;
+  const d1 = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+  if (Math.abs(d1) < 1e-9) return null;
+  const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / d1;
+  if (t < 0 || t > 1) return null;
+  return { x: x1 + t * (x2 - x1), y: y1 + t * (y2 - y1) };
+}
+function ptSegDistSq(p, a, e) {
+  const dx = e.x - a.x, dy = e.y - a.y;
+  const l2 = dx * dx + dy * dy;
+  if (!l2) return (p.x - a.x) ** 2 + (p.y - a.y) ** 2;
+  const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / l2));
+  return (p.x - (a.x + t * dx)) ** 2 + (p.y - (a.y + t * dy)) ** 2;
+}
+
+/* ---------- Nest-Triangulation ---------- */
+
+function computeAreas() {
+  setFrame();
+  const inputs = activeSightings().filter(s => bearingOf(s) != null);
+  const segs = inputs.map(s => seg({ lat: s.lat, lng: s.lng }, s));
+  const pts = [];
+  for (let i = 0; i < segs.length; i++) {
+    for (let j = i + 1; j < segs.length; j++) {
+      const p = segIntersect(segs[i], segs[j]);
+      if (p) pts.push(p);
+    }
+  }
+  const clusters = [];
+  for (const p of pts) {
+    let best = null, bestD = Infinity;
+    for (const c of clusters) {
+      const dd = Math.hypot(c.sx / c.n - p.x, c.sy / c.n - p.y);
+      if (dd < bestD) { bestD = dd; best = c; }
+    }
+    if (best && bestD < CLUSTER_RADIUS_M) { best.sx += p.x; best.sy += p.y; best.n++; }
+    else clusters.push({ n: 1, sx: p.x, sy: p.y });
+  }
+  const grayZones = state.nestAreas.filter(a => a.status === "nichtZugaenglich" && !a.hidden);
+  const newAreas = [];
+  clusters.forEach(c => {
+    const cx = c.sx / c.n, cy = c.sy / c.n;
+    const ids = inputs.filter(s => {
+      const g = seg({ lat: s.lat, lng: s.lng }, s);
+      return ptSegDistSq({ x: cx, y: cy }, g.a, g.e) <= AREA_RADIUS_M ** 2;
+    }).map(s => s.id);
+    if (ids.length < 3) return;
+    const latlng = xyToLatLng(cx, cy);
+    const blocked = grayZones.some(z => Math.hypot(toXY({ lat: z.lat, lng: z.lng }).x - cx, toXY({ lat: z.lat, lng: z.lng }).y - cy) < GRAY_ZONE_M);
+    if (blocked) return;
+    newAreas.push({ lat: latlng.lat, lng: latlng.lng, ids });
+  });
+  return newAreas;
+}
+
+function xyToLatLng(x, y) {
+  const d = Math.PI / 180;
+  return { lat: frame.lat0 + y / 111320, lng: frame.lng0 + x / (111320 * Math.cos(frame.lat0 * d)) };
+}
+
+function mergeAreas(computed) {
+  computed.forEach(ca => {
+    const existing = state.nestAreas.filter(a => a.status === "aktiv").find(a =>
+      Math.hypot(toXY({ lat: a.lat, lng: a.lng }).x - toXY({ lat: ca.lat, lng: ca.lng }).x,
+                 toXY({ lat: a.lat, lng: a.lng }).y - toXY({ lat: ca.lat, lng: ca.lng }).y) < CLUSTER_RADIUS_M);
+    if (existing) {
+      existing.lat = ca.lat; existing.lng = ca.lng; existing.ids = ca.ids; existing.count = ca.ids.length;
+    } else {
+      state.nestAreas.push({ id: areaIdSeq++, lat: ca.lat, lng: ca.lng, radius: AREA_RADIUS_M, ids: ca.ids, count: ca.ids.length, status: "aktiv", link: MAP_LINK(ca.lat, ca.lng), createdAt: new Date().toISOString() });
+    }
+  });
+  state.nestAreas.forEach(a => {
+    if (a.status === "aktiv") {
+      const still = computed.some(ca => Math.hypot(toXY({ lat: a.lat, lng: a.lng }).x - toXY({ lat: ca.lat, lng: ca.lng }).x, toXY({ lat: a.lat, lng: a.lng }).y - toXY({ lat: ca.lat, lng: ca.lng }).y) < CLUSTER_RADIUS_M);
+      if (!still) a.status = "erledigt", a.hidden = true;
+    }
+  });
+  // Benachrichtigung für neu entstandene aktive Bereiche
+  state.nestAreas.filter(a => a.status === "aktiv").forEach(a => {
+    if (!state.notifications.some(n => n.areaId === a.id)) {
+      state.notifications.push({ id: notifIdSeq++, areaId: a.id, link: a.link, at: new Date().toISOString(), read: false });
+      log(`Neuer wahrscheinlicher Nestbereich #${a.id} bei ${a.lat.toFixed(4)}, ${a.lng.toFixed(4)} (${a.count} Linien).`);
+    }
+  });
+  save();
+}
+
+/* ---------- Admin-Status ---------- */
+
+function setAreaStatus(areaId, status) {
+  const a = state.nestAreas.find(x => x.id === areaId);
+  if (!a || a.status === status) return;
+  const wasGray = a.status === "nichtZugaenglich";
+  const old = a.status;
+  a.status = status;
+  if (status === "nichtZugaenglich") {
+    a.ids.forEach(id => { const s = state.sightings.find(x => x.id === id); if (s) s.gray = true; });
+    log(`Bereich #${a.id}: „Bereich nicht zugänglich" – ${a.ids.length} Linien grau hinterlegt.`);
+  } else if (status === "entfernt") {
+    a.ids.forEach(id => { const s = state.sightings.find(x => x.id === id); if (s) { s.gray = false; s.hidden = true; } });
+    a.hidden = true;
+    log(`Bereich #${a.id}: „Nest entfernt" – ${a.ids.length} zugehörige Linien entfernt.`);
+  } else if (status === "nichtGefunden") {
+    a.hidden = true;
+    log(`Bereich #${a.id}: „Nest nicht gefunden" – Suchbereich gelöscht, Linien bleiben.`);
+  } else if (status === "aktiv") {
+    a.hidden = false;
+    log(`Bereich #${a.id} reaktiviert (zuvor: ${old}).`);
+  }
+  save();
+  refresh();
+}
+
+/* ---------- Karten-Rendering ---------- */
+
+function clearLayer(l) { l.clearLayers(); }
+
+function lineStyle(s) {
+  const estimated = !hasBearing(s);
+  const gray = s.gray;
+  const own = s.source === "local";
+  let color = gray ? "#9ca3af" : (own ? "#b45309" : "#2563eb");
+  return { color, weight: gray ? 2 : 3, dashArray: estimated ? "4 8" : (gray ? "2 4" : "6 4"), opacity: gray ? 0.6 : 1 };
+}
+
+function linePopup(s) {
+  const b = bearingOf(s);
+  const dirTxt = b == null ? "keine Richtung (Uhrzeit-Schätzung nicht möglich)" : (hasBearing(s) ? (s.bearingMode === "compass" ? `Kompass ${Math.round(b)}°` : `~${Math.round(b)}°`) : `geschätzt (${s.time})`);
+  const fl = s.flightMin != null ? `${s.flightMin} min` : "–";
+  return `<b>${escapeHtml(s.author)}</b> · ${s.time}<br>` +
+    `<span class="meta">${s.lat.toFixed(5)}, ${s.lng.toFixed(5)}</span><br>` +
+    `<span class="dir">Flugrichtung: ${dirTxt}</span><br>` +
+    `<span class="meta">Flugzeit (hin &amp; zurück): ${fl}</span><br>` +
+    `<label style="font-size:12px;color:#444">Flugzeit in Minuten (verkürzt den Strich):</label>` +
+    `<input type="number" min="1" max="60" step="1" id="flMin${s.id}" value="${s.flightMin != null ? s.flightMin : ""}" style="width:70px;padding:4px;margin:2px 4px 0 0">` +
+    `<button class="small" onclick="saveFlightTime(${s.id})">Speichern</button>` +
+    `<button class="small" onclick="delSighting(${s.id})">Löschen</button>`;
+}
+
+window.saveFlightTime = function (id) {
+  const s = state.sightings.find(x => x.id === id);
+  if (!s) return;
+  const v = document.getElementById("flMin" + id);
+  const t = parseInt(v.value, 10);
+  s.flightMin = t > 0 ? t : null;
+  save();
+  log(`Flugzeit für Sichtung ${id} aktualisiert (${s.flightMin != null ? s.flightMin : "keine"} min).`);
+  refresh();
+};
+window.delSighting = function (id) {
+  if (!confirm("Sichtung löschen?")) return;
+  const s = state.sightings.find(x => x.id === id);
+  if (s) { s.hidden = true; log(`Sichtung ${id} gelöscht.`); }
+  save();
+  refresh();
+};
+
+function renderMap() {
+  clearLayer(sightingsLayer);
+  clearLayer(nestLayer);
+  const vis = visibleSightings();
+  vis.forEach(s => {
+    const p = { lat: s.lat, lng: s.lng };
+    const line = L.polyline([p, destPoint(p, bearingOf(s), effLine(s))], lineStyle(s)).addTo(sightingsLayer);
+    line.bindPopup(linePopup(s));
+    const m = L.marker([s.lat, s.lng], { icon: s.source === "local" ? iconLocal : iconOther }).addTo(sightingsLayer);
+    m.bindPopup(linePopup(s));
+  });
+  const areas = state.nestAreas.filter(a => !a.hidden);
+  areas.forEach(a => {
+    const gray = a.status === "nichtZugaenglich";
+    const col = gray ? "#6b7280" : "#ea580c";
+    L.circle([a.lat, a.lng], { radius: a.radius, color: col, fillColor: gray ? "#9ca3af" : "#fdba74", fillOpacity: gray ? 0.35 : 0.2, weight: 2 }).addTo(nestLayer);
+    if (!gray) {
+      L.marker([a.lat, a.lng], { icon: L.divIcon({ className: "", html: "<div style='width:26px;height:26px;background:#fff;border:3px solid #ea580c;border-radius:50%;text-align:center;line-height:22px;font-weight:800;color:#ea580c;font-size:14px'><b>!</b></div>", iconSize: [26, 26], iconAnchor: [13, 13] }) })
+        .addTo(nestLayer)
+        .bindPopup(`<b>Wahrscheinlicher Nestbereich #${a.id}</b><br><span class="meta">${a.lat.toFixed(5)}, ${a.lng.toFixed(5)}</span><br><span class="dir">aus ${a.count} Linien</span><br><a href="${a.link}" target="_blank" rel="noopener">Google-Maps-Link</a>`);
+    }
+  });
+}
+
+function renderDraft() {
+  clearLayer(draftMarkerLayer);
+  if (!draft) return;
+  if (draft.lat != null) {
+    L.marker([draft.lat, draft.lng], { icon: iconLocal }).addTo(draftMarkerLayer);
+    if (draft.bearing != null) {
+      const p = { lat: draft.lat, lng: draft.lng };
+      const est = draft.bearingMode === "estimated";
+      L.polyline([p, destPoint(p, draft.bearing, draftFlightLen())], { color: est ? "#8a5a1a" : "#b45309", weight: 3, dashArray: est ? "4 8" : "6 4" }).addTo(draftMarkerLayer);
+    }
+  }
+}
+function draftFlightLen() {
+  let len = LINE_M;
+  if (draft.flightMin && draft.flightMin > 0) len = Math.min(LINE_M, (draft.flightMin / 2) * HORNET_SPEED_M_PER_MIN);
+  return len;
+}
+
+/* ---------- Sichtungs-UI ---------- */
+
+function showHint(t) {
+  const h = document.getElementById("hint");
+  h.textContent = t;
+  h.style.display = t ? "block" : "none";
+}
+
+function startSighting() {
+  if (draft) return;
+  draft = { lat: null, lng: null, bearing: null, bearingMode: null, flightMin: null, time: now24(), note: "" };
+  renderDraft();
+  setMode("rolls");
+  showHint("1. Klicke auf die Karte an den Ort, an dem die Hornisse gesichtet wurde.");
+  openSightingPanel();
+}
+
+function cancelSighting() {
+  draft = null;
+  pending = null;
+  renderDraft();
+  setMode(null);
+  document.getElementById("sightingPanel").style.display = "none";
+  showHint("");
+}
+
+function openSightingPanel() {
+  const form = document.getElementById("sightingForm");
+  form.innerHTML =
+    `<label>Standort (per Klick auf die Karte)</label>` +
+    `<div class="meta" id="locPicked" style="margin-bottom:4px">${draft.lat != null ? draft.lat.toFixed(5) + ", " + draft.lng.toFixed(5) : "noch nicht gewählt"}</div>` +
+    `<label>Ungefähre Uhrzeit der Sichtung (24 h)</label>` +
+    `<input type="time" id="inpTime" value="${draft.time}">` +
+    `<label>Flugrichtung</label>` +
+    `<div style="display:flex;gap:6px">` +
+    `<input type="number" id="inpCompass" min="0" max="359" step="1" placeholder="Kompass 0–359°">` +
+    `<button class="small" id="btnCompass" style="min-height:40px">Strich setzen</button></div>` +
+    `<div class="meta" id="dirPicked" style="margin-top:2px">${draft.bearing != null ? (draft.bearingMode === "compass" ? "Kompass " + Math.round(draft.bearing) + "°" : "~" + Math.round(draft.bearing) + "° " + (draft.bearingMode === "estimated" ? "(geschätzt)" : "(Karte)")) : "per Klick auf die Karte oder Kompassangabe"}</div>` +
+    `<label>Flugzeit hin &amp; zurück (Minuten, optional – verkürzt den 800-m-Strich)</label>` +
+    `<input type="number" id="inpFlight" min="1" max="60" step="1" placeholder="z. B. 3">` +
+    `<label>Notiz (optional)</label>` +
+    `<input type="text" id="inpNote" placeholder="z. B. am Nektarfeld" value="${escapeHtml(draft.note)}">` +
+    `<div class="btns">` +
+    `<button class="action send" id="btnSend">Senden</button>` +
+    `<button class="action cancel" id="btnCancel">Abbrechen</button></div>`;
+  document.getElementById("sightingPanel").style.display = "block";
+  document.getElementById("btnCompass").onclick = () => {
+    const v = parseFloat(document.getElementById("inpCompass").value);
+    if (v == null || isNaN(v)) { alert("Kompassrichtung 0–359° eingeben."); return; }
+    draft.bearing = ((v % 360) + 360) % 360;
+    draft.bearingMode = "compass";
+    updateDraftFromForm();
+    renderDraft();
+    refreshDraftFields();
+    setMode(null);
+    showHint('Richtung gesetzt. Daten prüfen und „Senden“ drücken.');
+  };
+  document.getElementById("btnSend").onclick = send;
+  document.getElementById("btnCancel").onclick = cancelSighting;
+  document.getElementById("inpFlight").onchange = () => {
+    const t = parseInt(document.getElementById("inpFlight").value, 10);
+    draft.flightMin = t > 0 ? t : null;
+    renderDraft();
+  };
+  document.getElementById("inpTime").onchange = () => {
+    draft.time = document.getElementById("inpTime").value;
+  };
+}
+
+function updateDraftFromForm() {
+  const t = parseInt(document.getElementById("inpFlight").value, 10);
+  draft.flightMin = t > 0 ? t : null;
+  draft.note = document.getElementById("inpNote").value;
+  draft.time = document.getElementById("inpTime").value;
+}
+
+function refreshDraftFields() {
+  const f = document.getElementById("sightingForm");
+  if (!f) return;
+  const loc = document.getElementById("locPicked"); if (loc) loc.textContent = draft.lat != null ? draft.lat.toFixed(5) + ", " + draft.lng.toFixed(5) : "noch nicht gewählt";
+  const dir = document.getElementById("dirPicked");
+  if (dir) dir.textContent = draft.bearing != null ? (draft.bearingMode === "compass" ? "Kompass " + Math.round(draft.bearing) + "°" : "~" + Math.round(draft.bearing) + "° " + (draft.bearingMode === "estimated" ? "(geschätzt)" : "(Karte)")) : "per Klick auf die Karte oder Kompassangabe";
+}
+
+function setMode(m) { pending = m; }
 
 map.on("click", (e) => {
-  if (mode === "fang") { addFang(e.latlng); }
-  else if (mode === "richtung" && pendingFangId != null) {
-    const fang = state.fangs.find(f => f.id === pendingFangId);
-    if (!fang) return;
-    fang.direction = { lat: e.latlng.lat, lng: e.latlng.lng };
-    drawDirection(fang);
-    fangLayers.get(fang.id).marker.bindPopup(buildPopup(fang));
-    save();
-    pendingFangId = null;
-    setMode("fang", document.getElementById("btnFang"));
-    rebuildNests();
+  if (!draft) return;
+  if (pending === "rolls" && draft.lat == null) {
+    draft.lat = e.latlng.lat;
+    draft.lng = e.latlng.lng;
+    renderDraft();
+    refreshDraftFields();
+    showHint("2. Klicke jetzt in Flugrichtung (Strich 800 m) – oder gib die Kompassrichtung ein.");
+    setMode("direction");
+  } else if (pending === "direction" && draft.lat != null) {
+    draft.bearing = bearing({ lat: draft.lat, lng: draft.lng }, e.latlng);
+    draft.bearingMode = "map";
+    renderDraft();
+    refreshDraftFields();
+    showHint('Richtung gesetzt. Daten prüfen und „Senden“ drücken.');
+    setMode(null);
   }
 });
 
-document.getElementById("btnFang").addEventListener("click", () => {
-  document.getElementById("panel").style.display = "none";
-  setMode(mode === "fang" ? null : "fang", btnFang);
-});
-document.getElementById("btnList").addEventListener("click", () => {
-  if (mode === "fang") setMode(null);
-  const panel = document.getElementById("panel");
-  panel.style.display = panel.style.display === "block" ? "none" : "block";
-  renderList();
-});
-document.getElementById("chkCommunity").addEventListener("change", () => {
-  renderCommunity();
-  rebuildNests();
-});
-document.getElementById("btnExport").addEventListener("click", exportData);
-document.getElementById("btnImport").addEventListener("click", () => document.getElementById("fileImport").click());
-document.getElementById("fileImport").addEventListener("change", handleImport);
-
-function renderList() {
-  const list = document.getElementById("fangList");
-  const comm = document.getElementById("communityList");
-  list.innerHTML = "";
-  if (!state.fangs.length) {
-    list.innerHTML = '<div style="color:#888">Noch keine eigenen Fänge. Starte mit "Fangort setzen".</div>';
-  } else {
-    state.fangs
-      .slice()
-      .sort((a, b) => (a.note || "").localeCompare(b.note || ""))
-      .forEach(f => {
-        const div = document.createElement("div");
-        div.className = "fang";
-        const dirTxt = f.direction
-          ? `Flugrichtung: ${f.direction.lat.toFixed(5)}, ${f.direction.lng.toFixed(5)}`
-          : "Flugrichtung: noch nicht eingegeben";
-        div.innerHTML =
-          `<div>${escapeHtml(f.note || "Fang")}</div>` +
-          `<div class="meta">${f.lat.toFixed(5)}, ${f.lng.toFixed(5)}</div>` +
-          `<div class="meta direction">${dirTxt}</div>` +
-          `<button class="small" onclick="setDirectionMode(${f.id})">${f.direction ? "Flugrichtung ändern" : "Flugrichtung festlegen"}</button>` +
-          `<button class="small" onclick="deleteFang(${f.id})">Löschen</button>`;
-        list.appendChild(div);
-      });
+function send() {
+  if (draft.lat == null) { alert("Zuerst den Sichtungsort auf der Karte anklicken."); return; }
+  updateDraftFromForm();
+  if (!draft.time) { alert("Uhrzeit der Sichtung eingeben."); return; }
+  const s = {
+    id: autoId++, author: "Eigene Sichtung", time: draft.time,
+    lat: draft.lat, lng: draft.lng,
+    bearing: draft.bearing, bearingMode: draft.bearingMode,
+    flightMin: draft.flightMin, note: draft.note.trim(),
+    source: "local", gray: false, hidden: false
+  };
+  if (!draft.bearing) {
+    const est = estimateBearing(s.time);
+    if (est != null) { s.bearing = est; s.bearingMode = "estimated"; }
+    else s.bearing = null;
   }
-  comm.innerHTML = "";
-  COMMUNITY.forEach(c => {
-    const div = document.createElement("div");
-    div.className = "fang";
-    div.innerHTML =
-      `<div>${escapeHtml(c.author)}</div>` +
-      `<div class="meta">${c.date}${c.note ? " – " + escapeHtml(c.note) : ""}</div>` +
-      `<div class="meta direction">${c.lat.toFixed(5)}, ${c.lng.toFixed(5)}</div>`;
-    comm.appendChild(div);
-  });
-}
-
-function renderCommunity() {
-  communityLayer.clearLayers();
-  if (!document.getElementById("chkCommunity").checked) return;
-  COMMUNITY.forEach(c => {
-    const m = L.marker([c.lat, c.lng], { icon: commIcon }).addTo(communityLayer);
-    m.bindPopup(`<b>${escapeHtml(c.author)}</b><br><span class="meta">${c.date}${c.note ? " – " + escapeHtml(c.note) : ""}</span>`);
-    const start = L.latLng(c.lat, c.lng);
-    const end = L.latLng(c.direction.lat, c.direction.lng);
-    L.polyline([start, end], { color: "#2563eb", weight: 2, dashArray: "6 4" }).addTo(communityLayer);
-    L.marker(end, { icon: arrowIcon("#2563eb", start, end) }).addTo(communityLayer);
-  });
-}
-
-function escapeHtml(t) {
-  const d = document.createElement("div");
-  d.textContent = t;
-  return d.innerHTML;
-}
-
-function deleteFang(id) {
-  if (!confirm("Fang löschen?")) return;
-  state.fangs = state.fangs.filter(f => f.id !== id);
-  const layers = fangLayers.get(id);
-  map.removeLayer(layers.marker);
-  if (layers.line) map.removeLayer(layers.line);
-  if (layers.arrow) map.removeLayer(layers.arrow);
-  fangLayers.delete(id);
+  state.sightings.push(s);
   save();
-  renderList();
-  rebuildNests();
+  log(`Sichtung ${s.id} gesendet (${s.time}, ${s.lat.toFixed(5)}, ${s.lng.toFixed(5)})${s.bearing != null ? ", Flugrichtung ~" + Math.round(s.bearing) + "°" : ""}.`);
+  draft = null;
+  setMode(null);
+  renderDraft();
+  document.getElementById("sightingPanel").style.display = "none";
+  showHint("");
+  toast("Sichtung gesendet. Der Admin sieht alle Sichtungen.");
+  refresh();
 }
+
+function now24() { return new Date().toTimeString().slice(0, 5); }
+
+/* ---------- Admin-UI ---------- */
+
+function renderAdminPanels() {
+  renderTabSights();
+  renderTabAreas();
+  renderTabNotifs();
+  renderTabLog();
+  updateBadge();
+}
+
+function renderTabSights() {
+  const el = document.getElementById("tabSights");
+  const ss = state.sightings.filter(s => !s.hidden);
+  if (!ss.length) { el.innerHTML = '<div style="color:#888">Keine Sichtungen.</div>'; return; }
+  el.innerHTML = "";
+  ss.slice().sort((a, b) => (a.time || "").localeCompare(b.time || "")).forEach(s => {
+    const b = bearingOf(s);
+    const dirTxt = b == null ? "keine Richtung" : (hasBearing(s) ? (s.bearingMode === "compass" ? `Kompass ${Math.round(b)}°` : `~${Math.round(b)}°`) : `geschätzt (${s.time})`);
+    const d = document.createElement("div");
+    d.className = "item";
+    d.innerHTML =
+      `<div>${escapeHtml(s.author)} <span class="tag ${s.gray ? "tag-grau" : ""}">${s.gray ? "grau" : ""}</span></div>` +
+      `<div class="meta">${s.time} · ${s.lat.toFixed(5)}, ${s.lng.toFixed(5)}</div>` +
+      `<div class="dir">Flugrichtung: ${dirTxt} · ${s.flightMin != null ? s.flightMin + " min" : "ohne Flugzeit"}</div>` +
+      (s.note ? `<div class="meta">${escapeHtml(s.note)}</div>` : "") +
+      `<button class="small" onclick="zoomTo(${s.lat},${s.lng})">Auf Karte zeigen</button>`;
+    el.appendChild(d);
+  });
+}
+
+window.zoomTo = function (lat, lng) { map.setView([lat, lng], 16); document.getElementById("adminPanel").style.display = "block"; };
+
+function statusLabel(st) {
+  return { aktiv: "aktiv", entfernt: "Nest entfernt", nichtGefunden: "nicht gefunden", nichtZugaenglich: "nicht zugänglich", erledigt: "erledigt" }[st] || st;
+}
+
+function renderTabAreas() {
+  const el = document.getElementById("tabAreas");
+  const areas = state.nestAreas.slice().reverse();
+  if (!areas.length) { el.innerHTML = '<div style="color:#888">Noch keine Nestbereiche berechnet. Mindestens 3 sich kreuzende 800-m-Striche nötig.</div>'; return; }
+  el.innerHTML = "";
+  areas.forEach(a => {
+    const d = document.createElement("div");
+    d.className = "item";
+    d.innerHTML =
+      `<div>Bereich #${a.id} <span class="tag tag-${a.status}">${statusLabel(a.status)}</span></div>` +
+      `<div class="meta">${a.lat.toFixed(5)}, ${a.lng.toFixed(5)} · aus ${a.count} Linien</div>` +
+      `<div class="dir"><a href="${a.link}" target="_blank" rel="noopener">Google-Maps-Link</a></div>` +
+      `<div style="margin-top:4px">` +
+      `<button class="small" onclick="setStatus(${a.id},'entfernt')">Nest entfernt</button>` +
+      `<button class="small" onclick="setStatus(${a.id},'nichtGefunden')">Nicht gefunden</button>` +
+      `<button class="small" onclick="setStatus(${a.id},'nichtZugaenglich')">Bereich nicht zugänglich</button></div>`;
+    el.appendChild(d);
+  });
+}
+window.setStatus = function (id, st) { setAreaStatus(id, st); };
+
+function renderTabNotifs() {
+  const el = document.getElementById("tabNotifs");
+  const nf = state.notifications.slice().reverse();
+  if (!nf.length) { el.innerHTML = '<div style="color:#888">Keine Hinweise.</div>'; return; }
+  el.innerHTML = `<button class="small" id="btnAllRead" style="margin-bottom:6px">Alle als gelesen</button>`;
+  document.getElementById("btnAllRead").onclick = () => { state.notifications.forEach(n => n.read = true); save(); renderAdminPanels(); };
+  nf.forEach(n => {
+    const d = document.createElement("div");
+    d.className = "notif" + (n.read ? " meta" : "");
+    const area = state.nestAreas.find(a => a.id === n.areaId);
+    d.innerHTML =
+      `<div class="big">${n.read ? "!" : "&nbsp;&nbsp;!"} ${area ? "Nestbereich #" + n.areaId : "Nestbereich gelöscht"}</div>` +
+      `<div class="meta">${fmtTime(n.at)}</div>` +
+      `<a href="${n.link}" target="_blank" rel="noopener" onclick="markRead(${n.id})">Google-Maps-Link zum Bereich</a>`;
+    el.appendChild(d);
+  });
+}
+window.markRead = function (id) {
+  const n = state.notifications.find(x => x.id === id);
+  if (n) { n.read = true; save(); updateBadge(); }
+};
+
+function renderTabLog() {
+  const el = document.getElementById("tabLog");
+  if (!state.log.length) { el.innerHTML = '<div style="color:#888">Noch keine Einträge.</div>'; return; }
+  el.innerHTML = "";
+  state.log.slice(0, 100).forEach(l => {
+    const d = document.createElement("div");
+    d.className = "item";
+    d.innerHTML = `<div class="meta">${fmtTime(l.at)}</div><div>${escapeHtml(l.text)}</div>`;
+    el.appendChild(d);
+  });
+}
+
+function updateBadge() {
+  const unread = state.notifications.filter(n => !n.read).length;
+  const badge = document.getElementById("adminBadge");
+  badge.style.display = unread > 0 ? "inline-block" : "none";
+  document.getElementById("btnFab").style.display = unread > 0 ? "block" : "none";
+}
+
+/* ---------- Export / Import ---------- */
 
 function exportData() {
-  const blob = new Blob([JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), fangs: state.fangs }, null, 2)], { type: "application/json" });
+  const blob = new Blob([JSON.stringify({ version: 2, exportedAt: new Date().toISOString(), data: state }, null, 2)], { type: "application/json" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `hornissenfind-faenge-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = `hornissenfind-daten-${new Date().toISOString().slice(0, 10)}.json`;
   a.click();
   URL.revokeObjectURL(a.href);
 }
@@ -350,25 +757,19 @@ function handleImport(e) {
   reader.onload = () => {
     try {
       const d = JSON.parse(reader.result);
-      const arr = Array.isArray(d) ? d : d.fangs;
-      if (!Array.isArray(arr)) throw new Error("Datei enthält kein Fänge-Array.");
-      if (!confirm("Der Import ersetzt alle eigenen Fänge. Fortfahren?")) return;
-      state.fangs = arr
-        .filter(f => f && typeof f.lat === "number" && typeof f.lng === "number")
-        .map(f => ({
-          id: autoId++,
-          lat: f.lat,
-          lng: f.lng,
-          note: String(f.note || ""),
-          direction: f.direction && typeof f.direction.lat === "number" && typeof f.direction.lng === "number"
-            ? { lat: f.direction.lat, lng: f.direction.lng }
-            : null
-        }));
+      const src = d.data || d;
+      if (!Array.isArray(src.sightings)) throw new Error("Datei enthält keine Sichtungen.");
+      if (!confirm("Der Import ersetzt alle lokalen Daten. Fortfahren?")) return;
+      state.sightings = src.sightings.map(x => Object.assign({ source: "local", gray: false, hidden: false }, x));
+      state.nestAreas = src.nestAreas || [];
+      state.notifications = src.notifications || [];
+      state.log = src.log || [];
+      autoId = Math.max.apply(null, [0].concat(state.sightings.map(s => s.id))) + 1;
+      areaIdSeq = Math.max.apply(null, [0].concat(state.nestAreas.map(a => a.id))) + 1;
+      notifIdSeq = Math.max.apply(null, [0].concat(state.notifications.map(n => n.id))) + 1;
       save();
-      rebuildOwnLayers();
-      renderList();
-      rebuildNests();
-      setMode(null);
+      refresh();
+      toast("Daten importiert.");
     } catch (err) {
       alert("Import fehlgeschlagen: " + err.message);
     }
@@ -377,124 +778,102 @@ function handleImport(e) {
   reader.readAsText(file);
 }
 
-function rebuildOwnLayers() {
-  fangLayers.forEach((layers) => {
-    map.removeLayer(layers.marker);
-    if (layers.line) map.removeLayer(layers.line);
-    if (layers.arrow) map.removeLayer(layers.arrow);
-  });
-  fangLayers.clear();
-  state.fangs.forEach(f => createFangLayers(f));
+/* ---------- Globale Aktualisierung ---------- */
+
+function refresh() {
+  mergeAreas(computeAreas());
+  renderMap();
+  renderDraft();
+  renderAdminPanels();
 }
 
-function visibleFangs() {
-  const own = state.fangs.filter(f => f.direction);
-  const comm = document.getElementById("chkCommunity").checked ? COMMUNITY.filter(c => c.direction) : [];
-  return own.concat(comm);
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.style.display = "block";
+  setTimeout(() => { t.style.display = "none"; }, 2600);
 }
 
-function rebuildNests() {
-  nestLayer.clearLayers();
-  const fangs = visibleFangs();
-  const points = [];
-  for (let i = 0; i < fangs.length; i++) {
-    for (let j = i + 1; j < fangs.length; j++) {
-      const hit = triangulatePair(fangs[i], fangs[j]);
-      if (hit) points.push(hit);
-    }
-  }
-  const clusters = clusterPoints(points, NEST_CLUSTER_KM);
-  clusters.forEach(cl => {
-    L.marker([cl.lat, cl.lng], { icon: nestIcon(cl.n) })
-      .addTo(nestLayer)
-      .bindPopup(`<b>Mögliches Nest</b><br><span class="meta">${cl.lat.toFixed(5)}, ${cl.lng.toFixed(5)}</span><br><span class="meta direction">aus ${cl.n} Linienkreuzungen</span>`);
-  });
+function escapeHtml(t) {
+  const d = document.createElement("div");
+  d.textContent = t == null ? "" : String(t);
+  return d.innerHTML;
 }
 
-function nestIcon(n) {
-  return L.divIcon({ className: "", html: `<div class="nestmark">${n}</div>`, iconSize: [28, 28], iconAnchor: [14, 14] });
-}
-
-function kmDist(a, b) {
-  const R = 6371, rad = Math.PI / 180;
-  const dφ = (b.lat - a.lat) * rad, dλ = (b.lng - a.lng) * rad;
-  const s = Math.sin(dφ / 2) ** 2 + Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dλ / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(s));
-}
-
-function clusterPoints(points, maxKm) {
-  const clusters = [];
-  for (const p of points) {
-    let best = null, bestD = Infinity;
-    for (const c of clusters) {
-      const dd = kmDist({ lat: c.sumLat / c.n, lng: c.sumLng / c.n }, p);
-      if (dd < bestD) { bestD = dd; best = c; }
-    }
-    if (best && bestD < maxKm) {
-      best.sumLat += p.lat;
-      best.sumLng += p.lng;
-      best.n++;
-    } else {
-      clusters.push({ n: 1, sumLat: p.lat, sumLng: p.lng });
-    }
-  }
-  return clusters.filter(c => c.n >= 2).map(c => ({ lat: c.sumLat / c.n, lng: c.sumLng / c.n, n: c.n }));
-}
-
-function unitVec(p) {
-  const rad = Math.PI / 180;
-  const φ = p.lat * rad, λ = p.lng * rad;
-  return [Math.cos(φ) * Math.cos(λ), Math.cos(φ) * Math.sin(λ), Math.sin(φ)];
-}
-function toLatLng(v) {
-  return { lat: Math.atan2(v[2], Math.hypot(v[0], v[1])) * 180 / Math.PI, lng: Math.atan2(v[1], v[0]) * 180 / Math.PI };
-}
-function cross(a, b) { return [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]]; }
-function normalize(a) {
-  const n = Math.hypot(a[0], a[1], a[2]);
-  return n ? [a[0]/n, a[1]/n, a[2]/n] : null;
-}
-
-function angDiff(x, y) { let d = Math.abs((x - y + 360) % 360); return d > 180 ? 360 - d : d; }
-
-function triangulatePair(a, b) {
-  const r1 = unitVec(a), e1 = unitVec(a.direction);
-  const r2 = unitVec(b), e2 = unitVec(b.direction);
-  const p1 = normalize(cross(r1, e1));
-  const p2 = normalize(cross(r2, e2));
-  if (!p1 || !p2) return null;
-  const d = cross(p1, p2);
-  const n = Math.hypot(d[0], d[1], d[2]);
-  if (n < 1e-9) return null;
-  const cands = [[d[0]/n, d[1]/n, d[2]/n], [-d[0]/n, -d[1]/n, -d[2]/n]];
-  const brgA = bearing(a, a.direction);
-  const brgB = bearing(b, b.direction);
-  for (const c of cands) {
-    const p = toLatLng(c);
-    if (angDiff(bearing(a, p), brgA) < 90 && angDiff(bearing(b, p), brgB) < 90) return p;
-  }
-  return null;
-}
+/* ---------- Selbsttest Geometrie ---------- */
 
 function selfTest() {
-  const A = { lat: 0, lng: 0, direction: { lat: 0.3, lng: 0.3 } };
-  const B = { lat: 0, lng: 0.05, direction: { lat: 0.3, lng: -0.25 } };
-  const r = triangulatePair(A, B);
-  const ok = !!r && Math.abs(r.lat - 0.025) < 0.001 && Math.abs(r.lng - 0.025) < 0.001;
-  document.getElementById("selftest").textContent = ok ? "selftest:OK" : "selftest:FAIL";
-  if (!ok) console.error("Selbsttest Triangulation fehlgeschlagen", r);
+  const okList = [];
+  const d1 = destPoint({ lat: 0, lng: 0 }, 90, 111320);
+  okList.push(Math.abs(d1.lng - 1) < 0.01 && Math.abs(d1.lat) < 0.01 ? "destPoint" : "destPoint FAIL");
+  frame = { lat0: 49.79, lng0: 9.93 };
+  const isect = segIntersect({ a: toXY({ lat: 49.775, lng: 9.960 }), e: toXY({ lat: 49.775, lng: 9.970 }), s: {} }, { a: toXY({ lat: 49.77, lng: 9.965 }), e: toXY({ lat: 49.78, lng: 9.965 }), s: {} });
+  okList.push(isect && Math.abs(isect.y - toXY({ lat: 49.775, lng: 9.965 }).y) < 1 && Math.abs(isect.x - toXY({ lat: 49.775, lng: 9.965 }).x) < 1 ? "segIntersect" : "segIntersect FAIL");
+  okList.push(effLenTest() ? "effLen" : "effLen FAIL");
+  okList.push((e => e === 90 + (12 - 6) / 14 * 180)(estimateBearing("12:00")) ? "estimateBearing" : "estimateBearing FAIL");
+  const ok = okList.every(x => !x.endsWith("FAIL"));
+  document.getElementById("selftest").textContent = ok ? "selftest:OK" : "selftest:FAIL " + okList.join(",");
+  if (!ok) console.error("Selbsttest fehlgeschlagen:", okList);
   return ok;
 }
 
-state.fangs.forEach(f => createFangLayers(f));
-renderCommunity();
-renderList();
-rebuildNests();
-selfTest();
-
-if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
-  navigator.serviceWorker.register("./sw.js").catch(err => console.warn("SW-Registrierung fehlgeschlagen", err));
+function effLenTest() {
+  const a = { flightMin: 2 };
+  const b = { flightMin: 10 };
+  const la = Math.min(LINE_M, (2 / 2) * HORNET_SPEED_M_PER_MIN);
+  const lb = Math.min(LINE_M, (10 / 2) * HORNET_SPEED_M_PER_MIN);
+  return la === effLine(a) && lb === effLine(b);
 }
+
+/* ---------- Init ---------- */
+
+function init() {
+  document.getElementById("btnModeSighting").onclick = () => {
+    role = "sichtender";
+    document.getElementById("btnModeSighting").classList.add("active");
+    document.getElementById("btnModeAdmin").classList.remove("active");
+    document.getElementById("adminPanel").style.display = "none";
+    renderMap();
+    showHint("");
+    if (!draft) startSighting();
+  };
+  document.getElementById("btnModeAdmin").onclick = () => {
+    cancelSighting();
+    role = "admin";
+    document.getElementById("btnModeAdmin").classList.add("active");
+    document.getElementById("btnModeSighting").classList.remove("active");
+    document.getElementById("sightingPanel").style.display = "none";
+    renderMap();
+    renderAdminPanels();
+    showHint("Admin-Ansicht: alle Sichtungen und Flugrichtungen. Kreuzungsbereiche (≥3 Striche) = Nestverdacht mit Google-Maps-Link.");
+  };
+  document.querySelectorAll(".tabs button").forEach(b => {
+    b.onclick = () => {
+      adminTab = b.dataset.tab;
+      document.querySelectorAll(".tabs button").forEach(x => x.classList.toggle("active", x === b));
+      ["sights", "areas", "notifs", "log"].forEach(t => document.getElementById("tab" + t.charAt(0).toUpperCase() + t.slice(1)).style.display = t === adminTab ? "block" : "none");
+    };
+  });
+  document.getElementById("btnExport").onclick = exportData;
+  document.getElementById("btnImport").onclick = () => document.getElementById("fileImport").click();
+  document.getElementById("fileImport").onchange = handleImport;
+  document.getElementById("btnFab").onclick = () => {
+    role = "admin";
+    document.getElementById("btnModeAdmin").click();
+  };
+  startSighting();
+  refresh();
+  selfTest();
+  if (new URLSearchParams(location.search).has("adm")) {
+    role = "admin";
+    document.getElementById("btnModeAdmin").click();
+  }
+  if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+    navigator.serviceWorker.register("./sw.js").catch(err => console.warn("SW-Registrierung fehlgeschlagen", err));
+  }
+}
+
+init();
 </script>
 </body>
 </html>
