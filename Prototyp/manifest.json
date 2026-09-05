@@ -1,0 +1,19 @@
+{
+  "name": "HornissenFindApp – Prototyp",
+  "short_name": "HornissenFind",
+  "description": "Fangort und Flugrichtung der asiatischen Hornisse auf der Karte erfassen und Nestpositionen triangulieren.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#b45309",
+  "lang": "de",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

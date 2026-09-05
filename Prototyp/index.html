@@ -3,7 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="HornissenFindApp Prototyp: Fangort der asiatischen Hornisse markieren, Flugrichtung angeben, Nestposition bestimmen.">
 <title>HornissenFindApp – Prototyp</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#b45309">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
   * { box-sizing: border-box; }
@@ -14,10 +21,14 @@
     background: rgba(255,255,255,.95); border-radius: 8px; box-shadow: 0 1px 6px rgba(0,0,0,.3); padding: 8px;
   }
   .toolbar button {
-    display: block; width: 100%; margin: 4px 0; padding: 8px 12px;
+    display: block; width: 100%; margin: 4px 0; padding: 10px 12px; min-height: 44px;
     border: 1px solid #ccc; border-radius: 6px; background: #fff; cursor: pointer; font-size: 14px;
   }
   .toolbar button.active { background: #ffd966; border-color: #e0a800; font-weight: 600; }
+  .toolbar label.toggle {
+    display: flex; align-items: center; gap: 6px; margin-top: 6px; padding: 0 4px;
+    font-size: 13px; cursor: pointer; min-height: 32px;
+  }
   .panel {
     position: absolute; top: 10px; right: 10px; bottom: 10px; z-index: 1000;
     width: 300px; max-width: 90vw; background: rgba(255,255,255,.97); border-radius: 8px;
@@ -27,12 +38,39 @@
   .panel .fang { border-top: 1px solid #eee; padding: 6px 0; }
   .panel .fang .meta { font-size: 12px; color: #666; }
   .panel .fang .meta.direction { color: #b45309; }
-  .panel button.small { font-size: 12px; padding: 2px 8px; margin: 2px 4px 0 0; }
+  .panel button.small { font-size: 12px; padding: 6px 8px; margin: 2px 4px 0 0; min-height: 32px; }
+  .panel .sec-title {
+    border-top: 2px solid #dbdbdb; margin: 10px 0 4px; padding-top: 8px;
+    font-weight: 600; font-size: 13px; color: #2563eb;
+  }
   .hint {
     position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); z-index: 1000;
     background: rgba(0,0,0,.7); color: #fff; padding: 8px 14px; border-radius: 20px; display: none; font-size: 14px;
+    max-width: 92vw; text-align: center;
   }
-  .arrow-icon { width: 36px; height: 36px; text-align: center; line-height: 36px; font-size: 30px; font-weight: bold; color: #b45309; }
+  .legend {
+    position: absolute; bottom: 10px; left: 10px; z-index: 1000; pointer-events: none;
+    background: rgba(255,255,255,.92); border-radius: 8px; box-shadow: 0 1px 6px rgba(0,0,0,.3);
+    padding: 6px 10px; font-size: 12px; line-height: 1.7;
+  }
+  .legend .lg { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+  .legend .lg-own { background: #c22; }
+  .legend .lg-comm { background: #2563eb; }
+  .legend .lg-nest { background: #fff; border: 2px solid #16a34a; box-shadow: 0 0 0 1px #16a34a; }
+  .arrow-icon { width: 36px; height: 36px; text-align: center; line-height: 36px; font-size: 30px; font-weight: bold; }
+  .nestmark {
+    width: 28px; height: 28px; border-radius: 50%; text-align: center; line-height: 24px;
+    background: #fff; color: #14532d; font-weight: 700; font-size: 12px;
+    border: 3px solid #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,.3) !important;
+  }
+  #selftest { display: none; }
+  @media (max-width: 600px) {
+    .toolbar { left: 6px; top: 6px; width: calc(100vw - 12px); max-width: none; display: flex; flex-wrap: wrap; gap: 6px; }
+    .toolbar button { flex: 1 1 45%; margin: 0; }
+    .toolbar label.toggle { flex: 1 1 100%; margin: 4px 0 0; }
+    .panel { top: 60px; left: 6px; right: 6px; bottom: 56px; width: auto; max-width: none; }
+    .legend { bottom: 4px; font-size: 11px; padding: 4px 8px; }
+  }
 </style>
 </head>
 <body>
@@ -41,27 +79,55 @@
 <div class="toolbar">
   <button id="btnFang">Fangort setzen</button>
   <button id="btnList">Fänge anzeigen</button>
+  <button id="btnExport">Daten exportieren</button>
+  <button id="btnImport">Daten importieren</button>
+  <label class="toggle"><input type="checkbox" id="chkCommunity" checked> Andere Nutzer anzeigen</label>
 </div>
+<input type="file" id="fileImport" accept=".json,application/json" style="display:none">
 
 <div class="panel" id="panel">
   <h3>Fänge</h3>
   <div id="fangList"></div>
+  <div class="sec-title" id="commSectionLabel">Sichtungen anderer Nutzer</div>
+  <div id="communityList"></div>
 </div>
 
 <div class="hint" id="hint"></div>
+
+<div class="legend">
+  <div><span class="lg lg-own"></span>Eigene Fänge</div>
+  <div><span class="lg lg-comm"></span>Sichtungen anderer</div>
+  <div><span class="lg lg-nest"></span>Mögliches Nest</div>
+</div>
+
+<div id="selftest"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 "use strict";
 
 const STORAGE_KEY = "hornissenfindapp";
+const NEST_CLUSTER_KM = 1.5;
+// ponytail: Gemeinschaftsdaten sind Beispieldaten ohne Backend; echte Sync braucht ein Backend.
+// +-Alle Richtungen laufen auf einen gemeinsamen Punkt (nest) zu, damit die Triangulation sichtbar konvergiert.
+const NEST_P = { lat: 49.778, lng: 9.958 };
+const COMMUNITY = [
+  { id: 9001, author: "Imkerverein Maintal", date: "2026-08-14", note: "Fang am Nektarfeld",      lat: 49.820, lng: 9.880, direction: NEST_P },
+  { id: 9002, author: "Bienenhof Altholz",  date: "2026-08-20", note: "",                          lat: 49.742, lng: 9.905, direction: NEST_P },
+  { id: 9003, author: "AG Hornisse Mainfranken", date: "2026-08-22", note: "Rebberg",              lat: 49.760, lng: 10.020, direction: NEST_P },
+  { id: 9004, author: "Imkerin S. Fuchs",   date: "2026-08-27", note: "Obstplantage",              lat: 49.835, lng: 10.015, direction: NEST_P },
+  { id: 9005, author: "Verein Südspessart", date: "2026-08-29", note: "",                          lat: 49.735, lng: 9.965, direction: NEST_P },
+  { id: 9006, author: "Hobbyimker T. Roth", date: "2026-09-02", note: "Am Waldrand",               lat: 49.815, lng: 9.945, direction: NEST_P },
+  { id: 9007, author: "Lehrbienenstand",    date: "2026-09-04", note: "Garten",                    lat: 49.790, lng: 9.925, direction: NEST_P }
+];
+
 let mode = null;
 let pendingFangId = null;
 let autoId = 1;
 const fangLayers = new Map();
 
 const state = load();
-const map = L.map("map").setView([50.0, 10.0], 6);
+const map = L.map("map").setView([49.79, 9.93], 12);
 
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   maxZoom: 19,
@@ -69,6 +135,9 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 }).addTo(map);
 
 const fangIcon = L.divIcon({ className: "", html: "<div style='width:26px;height:26px;background:#c22;border:2px solid #fff;border-radius:50%;'></div>", iconSize: [26,26], iconAnchor: [13,13] });
+const commIcon = L.divIcon({ className: "", html: "<div style='width:24px;height:24px;background:#2563eb;border:2px solid #fff;border-radius:6px;'></div>", iconSize: [24,24], iconAnchor: [12,12] });
+const communityLayer = L.layerGroup().addTo(map);
+const nestLayer = L.layerGroup().addTo(map);
 
 function load() {
   try {
@@ -118,12 +187,11 @@ function createFangLayers(fang) {
   const layers = { marker, line: null, arrow: null };
   fangLayers.set(fang.id, layers);
   drawDirection(fang);
+  rebuildNests();
 }
 
 function buildPopup(fang) {
-  const richtungBtn = fang.direction
-    ? `<button class="small" onclick="setDirectionMode(${fang.id})">Flugrichtung ändern</button>`
-    : `<button class="small" onclick="setDirectionMode(${fang.id})">Flugrichtung festlegen</button>`;
+  const richtungBtn = `<button class="small" onclick="setDirectionMode(${fang.id})">${fang.direction ? "Flugrichtung ändern" : "Flugrichtung festlegen"}</button>`;
   return `<b>${escapeHtml(fang.note || "")}</b><br>
     <span class="meta">${fang.lat.toFixed(5)}, ${fang.lng.toFixed(5)}</span><br>
     ${richtungBtn}
@@ -138,14 +206,16 @@ function drawDirection(fang) {
   const start = L.latLng(fang.lat, fang.lng);
   const end = L.latLng(fang.direction.lat, fang.direction.lng);
   layers.line = L.polyline([start, end], { color: "#b45309", weight: 3, dashArray: "6 4" }).addTo(map);
-  layers.arrow = L.marker(end, {
-    icon: L.divIcon({
-      className: "",
-      html: `<div class="arrow-icon" style="transform:rotate(${bearing(start, end)}deg);">▲</div>`,
-      iconSize: [36, 36],
-      iconAnchor: [18, 31]
-    })
-  }).addTo(map);
+  layers.arrow = L.marker(end, { icon: arrowIcon("#b45309", start, end) }).addTo(map);
+}
+
+function arrowIcon(color, start, end) {
+  return L.divIcon({
+    className: "",
+    html: `<div class="arrow-icon" style="color:${color}; transform:rotate(${bearing(start, end)}deg);">▲</div>`,
+    iconSize: [36, 36],
+    iconAnchor: [18, 31]
+  });
 }
 
 function bearing(a, b) {
@@ -173,6 +243,7 @@ map.on("click", (e) => {
     save();
     pendingFangId = null;
     setMode("fang", document.getElementById("btnFang"));
+    rebuildNests();
   }
 });
 
@@ -186,31 +257,62 @@ document.getElementById("btnList").addEventListener("click", () => {
   panel.style.display = panel.style.display === "block" ? "none" : "block";
   renderList();
 });
+document.getElementById("chkCommunity").addEventListener("change", () => {
+  renderCommunity();
+  rebuildNests();
+});
+document.getElementById("btnExport").addEventListener("click", exportData);
+document.getElementById("btnImport").addEventListener("click", () => document.getElementById("fileImport").click());
+document.getElementById("fileImport").addEventListener("change", handleImport);
 
 function renderList() {
   const list = document.getElementById("fangList");
+  const comm = document.getElementById("communityList");
   list.innerHTML = "";
   if (!state.fangs.length) {
-    list.innerHTML = '<div style="color:#888">Noch keine Fänge. Starte mit "Fangort setzen".</div>';
-    return;
+    list.innerHTML = '<div style="color:#888">Noch keine eigenen Fänge. Starte mit "Fangort setzen".</div>';
+  } else {
+    state.fangs
+      .slice()
+      .sort((a, b) => (a.note || "").localeCompare(b.note || ""))
+      .forEach(f => {
+        const div = document.createElement("div");
+        div.className = "fang";
+        const dirTxt = f.direction
+          ? `Flugrichtung: ${f.direction.lat.toFixed(5)}, ${f.direction.lng.toFixed(5)}`
+          : "Flugrichtung: noch nicht eingegeben";
+        div.innerHTML =
+          `<div>${escapeHtml(f.note || "Fang")}</div>` +
+          `<div class="meta">${f.lat.toFixed(5)}, ${f.lng.toFixed(5)}</div>` +
+          `<div class="meta direction">${dirTxt}</div>` +
+          `<button class="small" onclick="setDirectionMode(${f.id})">${f.direction ? "Flugrichtung ändern" : "Flugrichtung festlegen"}</button>` +
+          `<button class="small" onclick="deleteFang(${f.id})">Löschen</button>`;
+        list.appendChild(div);
+      });
   }
-  state.fangs
-    .slice()
-    .sort((a, b) => (a.note || "").localeCompare(b.note || ""))
-    .forEach(f => {
-      const div = document.createElement("div");
-      div.className = "fang";
-      const dirTxt = f.direction
-        ? `Flugrichtung: ${f.direction.lat.toFixed(5)}, ${f.direction.lng.toFixed(5)}`
-        : "Flugrichtung: noch nicht eingegeben";
-      div.innerHTML =
-        `<div>${escapeHtml(f.note || "Fang")}</div>` +
-        `<div class="meta">${f.lat.toFixed(5)}, ${f.lng.toFixed(5)}</div>` +
-        `<div class="meta direction">${dirTxt}</div>` +
-        `<button class="small" onclick="setDirectionMode(${f.id})">${f.direction ? "Flugrichtung ändern" : "Flugrichtung festlegen"}</button>` +
-        `<button class="small" onclick="deleteFang(${f.id})">Löschen</button>`;
-      list.appendChild(div);
-    });
+  comm.innerHTML = "";
+  COMMUNITY.forEach(c => {
+    const div = document.createElement("div");
+    div.className = "fang";
+    div.innerHTML =
+      `<div>${escapeHtml(c.author)}</div>` +
+      `<div class="meta">${c.date}${c.note ? " – " + escapeHtml(c.note) : ""}</div>` +
+      `<div class="meta direction">${c.lat.toFixed(5)}, ${c.lng.toFixed(5)}</div>`;
+    comm.appendChild(div);
+  });
+}
+
+function renderCommunity() {
+  communityLayer.clearLayers();
+  if (!document.getElementById("chkCommunity").checked) return;
+  COMMUNITY.forEach(c => {
+    const m = L.marker([c.lat, c.lng], { icon: commIcon }).addTo(communityLayer);
+    m.bindPopup(`<b>${escapeHtml(c.author)}</b><br><span class="meta">${c.date}${c.note ? " – " + escapeHtml(c.note) : ""}</span>`);
+    const start = L.latLng(c.lat, c.lng);
+    const end = L.latLng(c.direction.lat, c.direction.lng);
+    L.polyline([start, end], { color: "#2563eb", weight: 2, dashArray: "6 4" }).addTo(communityLayer);
+    L.marker(end, { icon: arrowIcon("#2563eb", start, end) }).addTo(communityLayer);
+  });
 }
 
 function escapeHtml(t) {
@@ -229,12 +331,170 @@ function deleteFang(id) {
   fangLayers.delete(id);
   save();
   renderList();
+  rebuildNests();
 }
 
-state.fangs.forEach(f => {
-  createFangLayers(f);
-  if (f.direction) drawDirection(f);
-});
+function exportData() {
+  const blob = new Blob([JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), fangs: state.fangs }, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `hornissenfind-faenge-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function handleImport(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const d = JSON.parse(reader.result);
+      const arr = Array.isArray(d) ? d : d.fangs;
+      if (!Array.isArray(arr)) throw new Error("Datei enthält kein Fänge-Array.");
+      if (!confirm("Der Import ersetzt alle eigenen Fänge. Fortfahren?")) return;
+      state.fangs = arr
+        .filter(f => f && typeof f.lat === "number" && typeof f.lng === "number")
+        .map(f => ({
+          id: autoId++,
+          lat: f.lat,
+          lng: f.lng,
+          note: String(f.note || ""),
+          direction: f.direction && typeof f.direction.lat === "number" && typeof f.direction.lng === "number"
+            ? { lat: f.direction.lat, lng: f.direction.lng }
+            : null
+        }));
+      save();
+      rebuildOwnLayers();
+      renderList();
+      rebuildNests();
+      setMode(null);
+    } catch (err) {
+      alert("Import fehlgeschlagen: " + err.message);
+    }
+    e.target.value = "";
+  };
+  reader.readAsText(file);
+}
+
+function rebuildOwnLayers() {
+  fangLayers.forEach((layers) => {
+    map.removeLayer(layers.marker);
+    if (layers.line) map.removeLayer(layers.line);
+    if (layers.arrow) map.removeLayer(layers.arrow);
+  });
+  fangLayers.clear();
+  state.fangs.forEach(f => createFangLayers(f));
+}
+
+function visibleFangs() {
+  const own = state.fangs.filter(f => f.direction);
+  const comm = document.getElementById("chkCommunity").checked ? COMMUNITY.filter(c => c.direction) : [];
+  return own.concat(comm);
+}
+
+function rebuildNests() {
+  nestLayer.clearLayers();
+  const fangs = visibleFangs();
+  const points = [];
+  for (let i = 0; i < fangs.length; i++) {
+    for (let j = i + 1; j < fangs.length; j++) {
+      const hit = triangulatePair(fangs[i], fangs[j]);
+      if (hit) points.push(hit);
+    }
+  }
+  const clusters = clusterPoints(points, NEST_CLUSTER_KM);
+  clusters.forEach(cl => {
+    L.marker([cl.lat, cl.lng], { icon: nestIcon(cl.n) })
+      .addTo(nestLayer)
+      .bindPopup(`<b>Mögliches Nest</b><br><span class="meta">${cl.lat.toFixed(5)}, ${cl.lng.toFixed(5)}</span><br><span class="meta direction">aus ${cl.n} Linienkreuzungen</span>`);
+  });
+}
+
+function nestIcon(n) {
+  return L.divIcon({ className: "", html: `<div class="nestmark">${n}</div>`, iconSize: [28, 28], iconAnchor: [14, 14] });
+}
+
+function kmDist(a, b) {
+  const R = 6371, rad = Math.PI / 180;
+  const dφ = (b.lat - a.lat) * rad, dλ = (b.lng - a.lng) * rad;
+  const s = Math.sin(dφ / 2) ** 2 + Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dλ / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(s));
+}
+
+function clusterPoints(points, maxKm) {
+  const clusters = [];
+  for (const p of points) {
+    let best = null, bestD = Infinity;
+    for (const c of clusters) {
+      const dd = kmDist({ lat: c.sumLat / c.n, lng: c.sumLng / c.n }, p);
+      if (dd < bestD) { bestD = dd; best = c; }
+    }
+    if (best && bestD < maxKm) {
+      best.sumLat += p.lat;
+      best.sumLng += p.lng;
+      best.n++;
+    } else {
+      clusters.push({ n: 1, sumLat: p.lat, sumLng: p.lng });
+    }
+  }
+  return clusters.filter(c => c.n >= 2).map(c => ({ lat: c.sumLat / c.n, lng: c.sumLng / c.n, n: c.n }));
+}
+
+function unitVec(p) {
+  const rad = Math.PI / 180;
+  const φ = p.lat * rad, λ = p.lng * rad;
+  return [Math.cos(φ) * Math.cos(λ), Math.cos(φ) * Math.sin(λ), Math.sin(φ)];
+}
+function toLatLng(v) {
+  return { lat: Math.atan2(v[2], Math.hypot(v[0], v[1])) * 180 / Math.PI, lng: Math.atan2(v[1], v[0]) * 180 / Math.PI };
+}
+function cross(a, b) { return [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]]; }
+function normalize(a) {
+  const n = Math.hypot(a[0], a[1], a[2]);
+  return n ? [a[0]/n, a[1]/n, a[2]/n] : null;
+}
+
+function angDiff(x, y) { let d = Math.abs((x - y + 360) % 360); return d > 180 ? 360 - d : d; }
+
+function triangulatePair(a, b) {
+  const r1 = unitVec(a), e1 = unitVec(a.direction);
+  const r2 = unitVec(b), e2 = unitVec(b.direction);
+  const p1 = normalize(cross(r1, e1));
+  const p2 = normalize(cross(r2, e2));
+  if (!p1 || !p2) return null;
+  const d = cross(p1, p2);
+  const n = Math.hypot(d[0], d[1], d[2]);
+  if (n < 1e-9) return null;
+  const cands = [[d[0]/n, d[1]/n, d[2]/n], [-d[0]/n, -d[1]/n, -d[2]/n]];
+  const brgA = bearing(a, a.direction);
+  const brgB = bearing(b, b.direction);
+  for (const c of cands) {
+    const p = toLatLng(c);
+    if (angDiff(bearing(a, p), brgA) < 90 && angDiff(bearing(b, p), brgB) < 90) return p;
+  }
+  return null;
+}
+
+function selfTest() {
+  const A = { lat: 0, lng: 0, direction: { lat: 0.3, lng: 0.3 } };
+  const B = { lat: 0, lng: 0.05, direction: { lat: 0.3, lng: -0.25 } };
+  const r = triangulatePair(A, B);
+  const ok = !!r && Math.abs(r.lat - 0.025) < 0.001 && Math.abs(r.lng - 0.025) < 0.001;
+  document.getElementById("selftest").textContent = ok ? "selftest:OK" : "selftest:FAIL";
+  if (!ok) console.error("Selbsttest Triangulation fehlgeschlagen", r);
+  return ok;
+}
+
+state.fangs.forEach(f => createFangLayers(f));
+renderCommunity();
+renderList();
+rebuildNests();
+selfTest();
+
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+  navigator.serviceWorker.register("./sw.js").catch(err => console.warn("SW-Registrierung fehlgeschlagen", err));
+}
 </script>
 </body>
 </html>
