@@ -56,6 +56,10 @@
   .panel .item .meta { font-size: 12px; color: #666; }
   .panel .item .dir { font-size: 12px; color: #b45309; }
   .panel .item .tag { display: inline-block; font-size: 11px; padding: 2px 6px; border-radius: 8px; margin-left: 6px; }
+  .panel .field { margin: 4px 0; transition: opacity .2s; }
+  .panel .field .lab { display: block; margin: 8px 0 2px; font-size: 13px; color: #444; }
+  .panel .field.ok .lab { color: #15803d; font-weight: 600; }
+  .panel .field.ok input { border-color: #15803d; }
   .tag-aktiv { background: #fecaca; color: #991b1b; }
   .tag-entfernt { background: #e5e7eb; color: #374151; }
   .tag-nichtGefunden { background: #e5e7eb; color: #374151; }
@@ -87,17 +91,16 @@
     position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%); z-index: 2000;
     background: #15803d; color: #fff; padding: 10px 18px; border-radius: 20px; display: none; font-size: 14px;
   }
-  .fab {
-    position: absolute; bottom: 60px; right: 12px; z-index: 1000; width: 52px; height: 52px; border-radius: 50%;
-    background: #dc2626; color: #fff; border: none; font-size: 26px; font-weight: 800; cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0,0,0,.4); display: none;
-  }
   #selftest { display: none; }
   @media (max-width: 600px) {
     .toolbar { left: 6px; top: 6px; width: calc(100vw - 12px); max-width: none; }
     .toolbar .row { display: none; }
     .panel { top: 58px; left: 6px; right: 6px; bottom: 56px; width: auto; max-width: none; }
-    .legend { bottom: 4px; font-size: 11px; padding: 4px 8px; }
+    #sightingPanel { top: auto; bottom: 0; right: 0; left: 0; width: 100%; max-width: none; max-height: 60%; z-index: 1500; }
+    .legend { top: 118px; bottom: auto; left: 8px; font-size: 11px; padding: 4px 8px; z-index: 900; }
+  }
+  @media (max-height: 560px) and (max-width: 600px) {
+    #sightingPanel { max-height: 72%; }
   }
 </style>
 </head>
@@ -135,12 +138,13 @@
 
 <div class="hint" id="hint"></div>
 <div class="legend">
-  <div><span class="lg lg-own"></span><b>Eigene Sichtung</b> <span class="lg lg-line-own" style="vertical-align:2px"></span> Flugrichtung</div>
-  <div><span class="lg lg-other"></span> Sichtung anderer <span class="lg lg-line-other" style="vertical-align:2px"></span> Flugrichtung</div>
-  <div><span class="lg lg-line-gray" style="vertical-align:2px"></span> Linie grau (Bereich nicht zugänglich)</div>
+  <div><span class="lg lg-line lg-line-own" style="vertical-align:2px"></span> Eigene Flugrichtung</div>
+  <div><span class="lg lg-line lg-line-other" style="vertical-align:2px"></span> Flugrichtung anderer</div>
+  <div><span class="lg lg-line lg-line-gray" style="vertical-align:2px"></span> Linie grau (Bereich nicht zugänglich)</div>
   <div><span class="lg lg-nest"></span> Wahrscheinlicher Nestbereich</div>
+  <div><span class="lg lg-own"></span> Eigene Sichtung</div>
+  <div><span class="lg lg-other"></span> Sichtung anderer</div>
 </div>
-<div class="fab" id="btnFab">&nbsp;!&nbsp;</div>
 <div class="toast" id="toast"></div>
 <div id="selftest"></div>
 
@@ -160,19 +164,18 @@ const MAP_LINK = (lat, lng) => `https://www.google.com/maps/search/?api=1&query=
 // Die Demo-Sichtungen kreuzen sich alle in NEST_P, damit die Triangulation sofort einen Nestbereich zeigt.
 const NEST_P = { lat: 49.775, lng: 9.960 };
 const DEMO = [
-  { id: 9001, author: "Imkerverein Maintal",    time: "09:40", lat: 49.7786, lng: 9.9600, bearing: 180, bearingMode: "map",      flightMin: null, note: "Am Nektarfeld" },
-  { id: 9002, author: "Bienenhof Altholz",      time: "11:15", lat: 49.7750, lng: 9.9656, bearing: 270, bearingMode: "map",      flightMin: null, note: "" },
-  { id: 9003, author: "AG Hornisse Mainfranken", time: "14:05", lat: 49.7705, lng: 9.9600, bearing: 0,   bearingMode: "map",      flightMin: null, note: "Rebberg" },
-  { id: 9004, author: "Imkerin S. Fuchs",       time: "17:30", lat: 49.7750, lng: 9.9555, bearing: 90,  bearingMode: "map",      flightMin: null, note: "Obstplantage" },
-  { id: 9005, author: "H. Weber",               time: "10:20", lat: 49.7708, lng: 9.9630, bearing: 210, bearingMode: "compass",   flightMin: null, note: "Kompass-Eingabe" },
-  { id: 9006, author: "I. Schmidt",             time: "16:45", lat: 49.7810, lng: 9.9580, bearing: 195, bearingMode: "map",      flightMin: 3,    note: "Flugzeit gemessen" }
+  { id: 9001, author: "Imkerverein Maintal",    time: "09:40", lat: 49.7786, lng: 9.9600, bearing: 180, bearingMode: "map",      len: 800, note: "Am Nektarfeld" },
+  { id: 9002, author: "Bienenhof Altholz",      time: "11:15", lat: 49.7750, lng: 9.9656, bearing: 270, bearingMode: "map",      len: 800, note: "" },
+  { id: 9003, author: "AG Hornisse Mainfranken", time: "14:05", lat: 49.7705, lng: 9.9600, bearing: 0,   bearingMode: "map",      len: 800, note: "Rebberg" },
+  { id: 9004, author: "Imkerin S. Fuchs",       time: "17:30", lat: 49.7750, lng: 9.9555, bearing: 90,  bearingMode: "map",      len: 800, note: "Obstplantage" },
+  { id: 9005, author: "H. Weber",               time: "10:20", lat: 49.7708, lng: 9.9630, bearing: 210, bearingMode: "compass",   len: 800, note: "Kompass-Eingabe" },
+  { id: 9006, author: "I. Schmidt",             time: "16:45", lat: 49.7810, lng: 9.9580, bearing: 195, bearingMode: "map",      len: 500, note: "Länge gemessen" }
 ];
 
 let mode = "sighting";
 let role = "sichtender";
 let adminTab = "sights";
 let draft = null;
-let pending = null;
 let autoId = 1;
 let areaIdSeq = 1;
 let notifIdSeq = 1;
@@ -200,6 +203,11 @@ function load() {
       autoId = d.autoId || 1;
       areaIdSeq = d.areaIdSeq || 1;
       notifIdSeq = d.notifIdSeq || 1;
+      (d.sightings || []).forEach(s => {
+        if (s.flightMin != null && s.len == null) s.len = Math.min(LINE_M, (s.flightMin / 2) * HORNET_SPEED_M_PER_MIN);
+        if (s.len == null) s.len = 800;
+        delete s.flightMin;
+      });
       return d;
     }
   } catch (e) { console.warn("laden fehlgeschlagen", e); }
@@ -213,7 +221,7 @@ function seed() {
     notifIdSeq: 1,
     sightings: DEMO.map(x => ({
       id: x.id, author: x.author, time: x.time, lat: x.lat, lng: x.lng,
-      bearing: x.bearing, bearingMode: x.bearingMode, flightMin: x.flightMin,
+      bearing: x.bearing, bearingMode: x.bearingMode, len: x.len != null ? x.len : 800,
       note: x.note, source: "demo", gray: false, hidden: false
     })),
     nestAreas: [],
@@ -247,9 +255,7 @@ function visibleSightings() {
 }
 
 function effLine(s) {
-  let len = LINE_M;
-  if (s.flightMin && s.flightMin > 0) len = Math.min(LINE_M, (s.flightMin / 2) * HORNET_SPEED_M_PER_MIN);
-  return len;
+  return Math.min(LINE_M, (s.len != null && s.len > 0) ? s.len : LINE_M);
 }
 
 function bearingOf(s) {
@@ -425,35 +431,34 @@ function setAreaStatus(areaId, status) {
 function clearLayer(l) { l.clearLayers(); }
 
 function lineStyle(s) {
-  const estimated = !hasBearing(s);
   const gray = s.gray;
   const own = s.source === "local";
-  let color = gray ? "#9ca3af" : (own ? "#b45309" : "#2563eb");
-  return { color, weight: gray ? 2 : 3, dashArray: estimated ? "4 8" : (gray ? "2 4" : "6 4"), opacity: gray ? 0.6 : 1 };
+  const color = gray ? "#9ca3af" : (own ? "#b45309" : "#2563eb");
+  return { color, weight: gray ? 2 : 3, opacity: gray ? 0.6 : 1 };
 }
 
 function linePopup(s) {
   const b = bearingOf(s);
   const dirTxt = b == null ? "keine Richtung (Uhrzeit-Schätzung nicht möglich)" : (hasBearing(s) ? (s.bearingMode === "compass" ? `Kompass ${Math.round(b)}°` : `~${Math.round(b)}°`) : `geschätzt (${s.time})`);
-  const fl = s.flightMin != null ? `${s.flightMin} min` : "–";
+  const lenTxt = s.len != null ? `${s.len} m` : "800 m";
   return `<b>${escapeHtml(s.author)}</b> · ${s.time}<br>` +
     `<span class="meta">${s.lat.toFixed(5)}, ${s.lng.toFixed(5)}</span><br>` +
     `<span class="dir">Flugrichtung: ${dirTxt}</span><br>` +
-    `<span class="meta">Flugzeit (hin &amp; zurück): ${fl}</span><br>` +
-    `<label style="font-size:12px;color:#444">Flugzeit in Minuten (verkürzt den Strich):</label>` +
-    `<input type="number" min="1" max="60" step="1" id="flMin${s.id}" value="${s.flightMin != null ? s.flightMin : ""}" style="width:70px;padding:4px;margin:2px 4px 0 0">` +
-    `<button class="small" onclick="saveFlightTime(${s.id})">Speichern</button>` +
+    `<span class="meta">Strichlänge: ${lenTxt}</span><br>` +
+    `<label style="font-size:12px;color:#444">Länge in Metern (max. 800):</label>` +
+    `<input type="number" min="1" max="800" step="10" id="len${s.id}" value="${s.len != null ? s.len : 800}" style="width:80px;padding:4px;margin:2px 4px 0 0">` +
+    `<button class="small" onclick="saveLineLen(${s.id})">Speichern</button>` +
     `<button class="small" onclick="delSighting(${s.id})">Löschen</button>`;
 }
 
-window.saveFlightTime = function (id) {
+window.saveLineLen = function (id) {
   const s = state.sightings.find(x => x.id === id);
   if (!s) return;
-  const v = document.getElementById("flMin" + id);
+  const v = document.getElementById("len" + id);
   const t = parseInt(v.value, 10);
-  s.flightMin = t > 0 ? t : null;
+  s.len = t > 0 ? Math.min(LINE_M, t) : 800;
   save();
-  log(`Flugzeit für Sichtung ${id} aktualisiert (${s.flightMin != null ? s.flightMin : "keine"} min).`);
+  log(`Strichlänge für Sichtung ${id} aktualisiert (${s.len} m).`);
   refresh();
 };
 window.delSighting = function (id) {
@@ -464,14 +469,30 @@ window.delSighting = function (id) {
   refresh();
 };
 
+function lineColor(s) {
+  return s.gray ? "#9ca3af" : (s.source === "local" ? "#b45309" : "#2563eb");
+}
+
+function arrowAt(end, bearingDeg, color, interactive) {
+  const head = L.divIcon({
+    className: "", iconSize: [22, 22], iconAnchor: [11, 11],
+    html: `<div style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;pointer-events:none"><svg width="18" height="18" viewBox="-9 -9 18 18" style="overflow:visible;transform:rotate(${bearingDeg}deg)"><polygon points="0,-8 6,5 -6,5" fill="${color}" stroke="#fff" stroke-width="1.5"/></svg></div>`
+  });
+  return L.marker([end.lat, end.lng], { icon: head, interactive: !!interactive });
+}
+
 function renderMap() {
   clearLayer(sightingsLayer);
   clearLayer(nestLayer);
   const vis = visibleSightings();
   vis.forEach(s => {
     const p = { lat: s.lat, lng: s.lng };
-    const line = L.polyline([p, destPoint(p, bearingOf(s), effLine(s))], lineStyle(s)).addTo(sightingsLayer);
+    const b = bearingOf(s);
+    if (b == null) return;
+    const end = destPoint(p, b, effLine(s));
+    const line = L.polyline([p, end], lineStyle(s)).addTo(sightingsLayer);
     line.bindPopup(linePopup(s));
+    arrowAt(end, b, lineColor(s)).addTo(sightingsLayer);
     const m = L.marker([s.lat, s.lng], { icon: s.source === "local" ? iconLocal : iconOther }).addTo(sightingsLayer);
     m.bindPopup(linePopup(s));
   });
@@ -488,22 +509,41 @@ function renderMap() {
   });
 }
 
+let draftLine = null;
+let draftArrow = null;
+let dragMarker = null;
+
 function renderDraft() {
   clearLayer(draftMarkerLayer);
+  draftLine = null;
+  draftArrow = null;
+  dragMarker = null;
   if (!draft) return;
   if (draft.lat != null) {
-    L.marker([draft.lat, draft.lng], { icon: iconLocal }).addTo(draftMarkerLayer);
+    const p = { lat: draft.lat, lng: draft.lng };
     if (draft.bearing != null) {
-      const p = { lat: draft.lat, lng: draft.lng };
-      const est = draft.bearingMode === "estimated";
-      L.polyline([p, destPoint(p, draft.bearing, draftFlightLen())], { color: est ? "#8a5a1a" : "#b45309", weight: 3, dashArray: est ? "4 8" : "6 4" }).addTo(draftMarkerLayer);
+      const end = destPoint(p, draft.bearing, draftFlightLen());
+      draftLine = L.polyline([p, end], { color: "#b45309", weight: 3 }).addTo(draftMarkerLayer);
+      draftArrow = arrowAt(end, draft.bearing, "#b45309", true).addTo(draftMarkerLayer);
+      draftArrow.on("mousedown touchstart", (e) => { if (draft) { L.DomEvent.stopPropagation(e); enableLineDrag(); } });
     }
+    dragMarker = L.marker([draft.lat, draft.lng], { icon: iconLocal, draggable: true }).addTo(draftMarkerLayer);
+    dragMarker.on("drag", (e) => {
+      if (!draft) return;
+      draft.lat = e.latlng.lat; draft.lng = e.latlng.lng;
+      const pos = { lat: draft.lat, lng: draft.lng };
+      if (draft.bearing != null && draftLine && draftArrow) {
+        const end = destPoint(pos, draft.bearing, draftFlightLen());
+        draftLine.setLatLngs([[pos.lat, pos.lng], [end.lat, end.lng]]);
+        draftArrow.setLatLng([end.lat, end.lng]);
+      }
+      refreshDraftFields();
+    });
+    dragMarker.on("dragend", () => { if (draft) { renderDraft(); refreshDraftFields(); } });
   }
 }
 function draftFlightLen() {
-  let len = LINE_M;
-  if (draft.flightMin && draft.flightMin > 0) len = Math.min(LINE_M, (draft.flightMin / 2) * HORNET_SPEED_M_PER_MIN);
-  return len;
+  return Math.min(LINE_M, (draft.len != null && draft.len > 0) ? draft.len : LINE_M);
 }
 
 /* ---------- Sichtungs-UI ---------- */
@@ -516,18 +556,15 @@ function showHint(t) {
 
 function startSighting() {
   if (draft) return;
-  draft = { lat: null, lng: null, bearing: null, bearingMode: null, flightMin: null, time: now24(), note: "" };
+  draft = { lat: null, lng: null, bearing: null, bearingMode: null, len: 800, time: now24(), note: "" };
   renderDraft();
-  setMode("rolls");
-  showHint("1. Klicke auf die Karte an den Ort, an dem die Hornisse gesichtet wurde.");
   openSightingPanel();
 }
 
 function cancelSighting() {
   draft = null;
-  pending = null;
+  cancelLineDrag();
   renderDraft();
-  setMode(null);
   document.getElementById("sightingPanel").style.display = "none";
   showHint("");
 }
@@ -535,103 +572,188 @@ function cancelSighting() {
 function openSightingPanel() {
   const form = document.getElementById("sightingForm");
   form.innerHTML =
-    `<label>Standort (per Klick auf die Karte)</label>` +
-    `<div class="meta" id="locPicked" style="margin-bottom:4px">${draft.lat != null ? draft.lat.toFixed(5) + ", " + draft.lng.toFixed(5) : "noch nicht gewählt"}</div>` +
-    `<label>Ungefähre Uhrzeit der Sichtung (24 h)</label>` +
-    `<input type="time" id="inpTime" value="${draft.time}">` +
-    `<label>Flugrichtung</label>` +
-    `<div style="display:flex;gap:6px">` +
+    `<div class="field" id="fieldLoc"><span class="lab">Standort (langes Drücken auf die Karte)</span></div>` +
+    `<div class="field" id="fieldTime"><span class="lab">Ungefähre Uhrzeit der Sichtung (24 h)</span>` +
+    `<input type="time" id="inpTime" value="${draft.time}"></div>` +
+    `<div class="field" id="fieldDir"><span class="lab">Flugrichtung (langes Drücken auf Pfeil auf der Karte)</span>` +
+    `<div style="display:flex;gap:6px;margin:4px 0 2px">` +
     `<input type="number" id="inpCompass" min="0" max="359" step="1" placeholder="Kompass 0–359°">` +
-    `<button class="small" id="btnCompass" style="min-height:40px">Strich setzen</button></div>` +
-    `<div class="meta" id="dirPicked" style="margin-top:2px">${draft.bearing != null ? (draft.bearingMode === "compass" ? "Kompass " + Math.round(draft.bearing) + "°" : "~" + Math.round(draft.bearing) + "° " + (draft.bearingMode === "estimated" ? "(geschätzt)" : "(Karte)")) : "per Klick auf die Karte oder Kompassangabe"}</div>` +
-    `<label>Flugzeit hin &amp; zurück (Minuten, optional – verkürzt den 800-m-Strich)</label>` +
-    `<input type="number" id="inpFlight" min="1" max="60" step="1" placeholder="z. B. 3">` +
-    `<label>Notiz (optional)</label>` +
-    `<input type="text" id="inpNote" placeholder="z. B. am Nektarfeld" value="${escapeHtml(draft.note)}">` +
+    `<button class="small" id="btnCompass" style="min-height:40px">Strich setzen</button></div></div>` +
+    `<div class="field"><span class="lab">Notiz (optional)</span>` +
+    `<input type="text" id="inpNote" placeholder="z. B. am Nektarfeld" value="${escapeHtml(draft.note)}"></div>` +
     `<div class="btns">` +
-    `<button class="action send" id="btnSend">Senden</button>` +
-    `<button class="action cancel" id="btnCancel">Abbrechen</button></div>`;
+    `<button class="action cancel" id="btnSend">Senden</button>` +
+    `<button class="action cancel" id="btnCancel" style="background:#6b7280">Abbrechen</button></div>`;
   document.getElementById("sightingPanel").style.display = "block";
   document.getElementById("btnCompass").onclick = () => {
     const v = parseFloat(document.getElementById("inpCompass").value);
     if (v == null || isNaN(v)) { alert("Kompassrichtung 0–359° eingeben."); return; }
     draft.bearing = ((v % 360) + 360) % 360;
     draft.bearingMode = "compass";
-    updateDraftFromForm();
+    draft.len = 800;
     renderDraft();
     refreshDraftFields();
-    setMode(null);
-    showHint('Richtung gesetzt. Daten prüfen und „Senden“ drücken.');
   };
   document.getElementById("btnSend").onclick = send;
   document.getElementById("btnCancel").onclick = cancelSighting;
-  document.getElementById("inpFlight").onchange = () => {
-    const t = parseInt(document.getElementById("inpFlight").value, 10);
-    draft.flightMin = t > 0 ? t : null;
-    renderDraft();
-  };
-  document.getElementById("inpTime").onchange = () => {
-    draft.time = document.getElementById("inpTime").value;
-  };
+  document.getElementById("inpTime").onchange = () => { draft.time = document.getElementById("inpTime").value; refreshDraftFields(); };
+  document.getElementById("inpNote").onchange = () => { draft.note = document.getElementById("inpNote").value; };
+  refreshDraftFields();
 }
 
 function updateDraftFromForm() {
-  const t = parseInt(document.getElementById("inpFlight").value, 10);
-  draft.flightMin = t > 0 ? t : null;
-  draft.note = document.getElementById("inpNote").value;
-  draft.time = document.getElementById("inpTime").value;
+  const t = document.getElementById("inpTime");
+  if (t) draft.time = t.value;
+  const n = document.getElementById("inpNote");
+  if (n) draft.note = n.value;
 }
 
 function refreshDraftFields() {
   const f = document.getElementById("sightingForm");
   if (!f) return;
-  const loc = document.getElementById("locPicked"); if (loc) loc.textContent = draft.lat != null ? draft.lat.toFixed(5) + ", " + draft.lng.toFixed(5) : "noch nicht gewählt";
-  const dir = document.getElementById("dirPicked");
-  if (dir) dir.textContent = draft.bearing != null ? (draft.bearingMode === "compass" ? "Kompass " + Math.round(draft.bearing) + "°" : "~" + Math.round(draft.bearing) + "° " + (draft.bearingMode === "estimated" ? "(geschätzt)" : "(Karte)")) : "per Klick auf die Karte oder Kompassangabe";
+  const flLoc = document.getElementById("fieldLoc");
+  const flTime = document.getElementById("fieldTime");
+  const flDir = document.getElementById("fieldDir");
+  if (flLoc) flLoc.classList.toggle("ok", draft.lat != null);
+  if (flTime) flTime.classList.toggle("ok", !!draft.time);
+  if (flDir) flDir.classList.toggle("ok", draft.bearing != null);
+  const btn = document.getElementById("btnSend");
+  if (btn) {
+    const ready = draft.lat != null && draft.time && draft.bearing != null;
+    btn.classList.toggle("send", ready);
+    btn.classList.toggle("cancel", !ready);
+    btn.style.background = ready ? "#15803d" : "#9ca3af";
+  }
 }
 
-function setMode(m) { pending = m; }
+/* ---------- Karten-Interaktion (Long-Press) ---------- */
+
+let longPressTimer = null;
+let longPressFiredAt = 0;
+let draggingLine = false;
+
+function enableLineDrag() {
+  if (draggingLine || !draft || draft.lat == null || draft.bearing == null) return;
+  draggingLine = true;
+  map.dragging.disable();
+  map.getContainer().classList.add("dragline");
+  const update = () => {
+    const ll = map.mouseEventToLatLng(dragLatestPos);
+    if (!ll) return;
+    const base = { lat: draft.lat, lng: draft.lng };
+    draft.bearing = bearing(base, ll);
+    draft.len = Math.max(50, Math.min(LINE_M, dist(base, ll)));
+    draft.bearingMode = "map";
+    const end = destPoint(base, draft.bearing, draftFlightLen());
+    if (draftLine) draftLine.setLatLngs([[base.lat, base.lng], [end.lat, end.lng]]);
+    if (draftArrow) draftArrow.setLatLng([end.lat, end.lng]);
+    refreshDraftFields();
+  };
+  const move = (e) => {
+    if (!draft) return;
+    const oe = e.originalEvent || e;
+    dragLatestPos = oe.touches ? oe.touches[0] : oe;
+    update();
+  };
+  const done = () => {
+    map.dragging.enable();
+    map.getContainer().classList.remove("dragline");
+    map.off("mousemove", move);
+    map.off("touchmove", move);
+    map.off("mouseup", done);
+    map.off("touchend", done);
+    draggingLine = false;
+    if (draft) { renderDraft(); refreshDraftFields(); }
+  };
+  map.on("mousemove", move);
+  map.on("touchmove", move);
+  map.on("mouseup", done);
+  map.on("touchend", done);
+}
+
+function cancelLineDrag() {
+  if (!draggingLine) return;
+  draggingLine = false;
+  map.dragging.enable();
+  map.getContainer().classList.remove("dragline");
+  map.off("mousemove");
+  map.off("touchmove");
+  map.off("mouseup");
+  map.off("touchend");
+}
+
+let dragLatestPos = null;
+
+function dist(a, b) {
+  const R = 6371000, d = Math.PI / 180;
+  const dLat = (b.lat - a.lat) * d, dLon = (b.lng - a.lng) * d;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * d) * Math.cos(b.lat * d) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
 
 map.on("click", (e) => {
-  if (!draft) return;
-  if (pending === "rolls" && draft.lat == null) {
+  if (!draft || draggingLine) return;
+  if (Date.now() - longPressFiredAt < 800) return;
+  if (draft.lat == null) {
     draft.lat = e.latlng.lat;
     draft.lng = e.latlng.lng;
     renderDraft();
     refreshDraftFields();
-    showHint("2. Klicke jetzt in Flugrichtung (Strich 800 m) – oder gib die Kompassrichtung ein.");
-    setMode("direction");
-  } else if (pending === "direction" && draft.lat != null) {
+  } else if (draft.bearing == null) {
     draft.bearing = bearing({ lat: draft.lat, lng: draft.lng }, e.latlng);
     draft.bearingMode = "map";
+    draft.len = 800;
     renderDraft();
     refreshDraftFields();
-    showHint('Richtung gesetzt. Daten prüfen und „Senden“ drücken.');
-    setMode(null);
   }
 });
 
+/* Long-Press zum Setzen des Sichtungsortes */
+function fireLongPress(lat, lng) {
+  draft.lat = lat;
+  draft.lng = lng;
+  longPressFiredAt = Date.now();
+  renderDraft();
+  refreshDraftFields();
+}
+map.on("mousedown", (e) => {
+  if (!draft || draft.lat != null || draggingLine) return;
+  longPressTimer = setTimeout(() => fireLongPress(e.latlng.lat, e.latlng.lng), 450);
+});
+map.on("touchstart", (e) => {
+  if (!draft || draft.lat != null || draggingLine) return;
+  const t = e.touches[0];
+  const rect = map.getContainer().getBoundingClientRect();
+  longPressTimer = setTimeout(() => {
+    const ll = map.containerPointToLatLng(L.point(t.clientX - rect.left, t.clientY - rect.top));
+    fireLongPress(ll.lat, ll.lng);
+  }, 450);
+});
+map.on("mouseup", () => clearLongPress());
+map.on("touchend", () => clearLongPress());
+function clearLongPress() { if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; } }
+
 function send() {
-  if (draft.lat == null) { alert("Zuerst den Sichtungsort auf der Karte anklicken."); return; }
   updateDraftFromForm();
-  if (!draft.time) { alert("Uhrzeit der Sichtung eingeben."); return; }
+  if (draft.lat == null) return;
+  if (!draft.time) return;
+  if (draft.bearing == null) {
+    const est = estimateBearing(draft.time);
+    if (est != null) { draft.bearing = est; draft.bearingMode = "estimated"; }
+  }
+  if (draft.bearing == null) return;
   const s = {
     id: autoId++, author: "Eigene Sichtung", time: draft.time,
     lat: draft.lat, lng: draft.lng,
     bearing: draft.bearing, bearingMode: draft.bearingMode,
-    flightMin: draft.flightMin, note: draft.note.trim(),
+    len: draft.len != null ? Math.min(LINE_M, draft.len) : 800, note: draft.note.trim(),
     source: "local", gray: false, hidden: false
   };
-  if (!draft.bearing) {
-    const est = estimateBearing(s.time);
-    if (est != null) { s.bearing = est; s.bearingMode = "estimated"; }
-    else s.bearing = null;
-  }
   state.sightings.push(s);
   save();
   log(`Sichtung ${s.id} gesendet (${s.time}, ${s.lat.toFixed(5)}, ${s.lng.toFixed(5)})${s.bearing != null ? ", Flugrichtung ~" + Math.round(s.bearing) + "°" : ""}.`);
   draft = null;
-  setMode(null);
+  cancelLineDrag();
   renderDraft();
   document.getElementById("sightingPanel").style.display = "none";
   showHint("");
@@ -664,7 +786,7 @@ function renderTabSights() {
     d.innerHTML =
       `<div>${escapeHtml(s.author)} <span class="tag ${s.gray ? "tag-grau" : ""}">${s.gray ? "grau" : ""}</span></div>` +
       `<div class="meta">${s.time} · ${s.lat.toFixed(5)}, ${s.lng.toFixed(5)}</div>` +
-      `<div class="dir">Flugrichtung: ${dirTxt} · ${s.flightMin != null ? s.flightMin + " min" : "ohne Flugzeit"}</div>` +
+      `<div class="dir">Flugrichtung: ${dirTxt} · ${s.len != null ? s.len + " m" : "800 m"}</div>` +
       (s.note ? `<div class="meta">${escapeHtml(s.note)}</div>` : "") +
       `<button class="small" onclick="zoomTo(${s.lat},${s.lng})">Auf Karte zeigen</button>`;
     el.appendChild(d);
@@ -734,9 +856,7 @@ function renderTabLog() {
 
 function updateBadge() {
   const unread = state.notifications.filter(n => !n.read).length;
-  const badge = document.getElementById("adminBadge");
-  badge.style.display = unread > 0 ? "inline-block" : "none";
-  document.getElementById("btnFab").style.display = unread > 0 ? "block" : "none";
+  document.getElementById("adminBadge").style.display = unread > 0 ? "inline-block" : "none";
 }
 
 /* ---------- Export / Import ---------- */
@@ -818,10 +938,10 @@ function selfTest() {
 }
 
 function effLenTest() {
-  const a = { flightMin: 2 };
-  const b = { flightMin: 10 };
-  const la = Math.min(LINE_M, (2 / 2) * HORNET_SPEED_M_PER_MIN);
-  const lb = Math.min(LINE_M, (10 / 2) * HORNET_SPEED_M_PER_MIN);
+  const a = { len: 500 };
+  const b = { len: 1100 };
+  const la = Math.min(LINE_M, 500);
+  const lb = Math.min(LINE_M, 1100);
   return la === effLine(a) && lb === effLine(b);
 }
 
@@ -857,10 +977,6 @@ function init() {
   document.getElementById("btnExport").onclick = exportData;
   document.getElementById("btnImport").onclick = () => document.getElementById("fileImport").click();
   document.getElementById("fileImport").onchange = handleImport;
-  document.getElementById("btnFab").onclick = () => {
-    role = "admin";
-    document.getElementById("btnModeAdmin").click();
-  };
   startSighting();
   refresh();
   selfTest();
