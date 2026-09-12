@@ -180,6 +180,8 @@ let draft = null;
 let autoId = 1;
 let areaIdSeq = 1;
 let notifIdSeq = 1;
+let saveLimitWarned = false;
+let storageTestDone = false;
 
 const state = load();
 const map = L.map("map").setView([49.79, 9.93], 13);
@@ -235,7 +237,13 @@ function seed() {
 
 function save() {
   state.autoId = autoId; state.areaIdSeq = areaIdSeq; state.notifIdSeq = notifIdSeq;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    saveLimitWarned = false;
+  } catch (e) {
+    console.warn("localStorage-Limit erreicht", e);
+    if (!saveLimitWarned) { saveLimitWarned = true; toast("Achtung: Speicher voll – Sichtungen koennen nicht dauerhaft gespeichert werden."); }
+  }
 }
 
 function log(text) {
@@ -453,6 +461,21 @@ function lineStyleTest() {
   const o = lineStyle({ gray: false, source: "demo" });
   return g.color === "#9ca3af" && g.weight < n.weight && g.opacity < n.opacity &&
          n.color === "#b45309" && o.color === "#2563eb";
+}
+
+function storageLimitTest() {
+  const realSetItem = localStorage.setItem;
+  let hitQuota = false;
+  localStorage.setItem = function () { hitQuota = true; throw new DOMException("QuotaExceededError"); };
+  try {
+    save();                       // darf NICHT crashen
+  } catch (e) {
+    localStorage.setItem = realSetItem;
+    return false;                 // uncaught => Fehlschlag
+  } finally {
+    localStorage.setItem = realSetItem;
+  }
+  return hitQuota && saveLimitWarned;   // sollte gewarnt haben statt still zu scheitern
 }
 
 function linePopup(s) {
@@ -984,6 +1007,7 @@ function selfTest() {
   okList.push(visibleFilterTest() ? "visibleFilter" : "visibleFilter FAIL");
   okList.push(areaColorsTest() ? "areaColors" : "areaColors FAIL");
   okList.push(lineStyleTest() ? "lineStyle" : "lineStyle FAIL");
+  okList.push(storageLimitTest() ? "storageLimit" : "storageLimit FAIL");
   const ok = okList.every(x => !x.endsWith("FAIL"));
   document.getElementById("selftest").textContent = ok ? "selftest:OK" : "selftest:FAIL " + okList.join(",");
   if (!ok) console.error("Selbsttest fehlgeschlagen:", okList);
