@@ -993,6 +993,18 @@ function escapeHtml(t) {
   return d.innerHTML;
 }
 
+function xssHygieneTest() {
+  const evil = `<img src=x onerror=alert(1)>` + `"><script>alert(2)</script>`;
+  const esc = escapeHtml(evil);
+  const reopens = document.createElement("div");
+  reopens.innerHTML = esc;
+  const noExecutable =
+    esc.indexOf("<img") === -1 && esc.indexOf("<script") === -1 &&
+    !reopens.querySelector("img") && !reopens.querySelector("script") &&
+    reopens.textContent.indexOf("onerror=alert(1)") === -1;
+  return noExecutable && escapeHtml("a<b>&c") === "a&lt;b&gt;&amp;c";
+}
+
 /* ---------- Selbsttest Geometrie ---------- */
 
 function selfTest() {
@@ -1008,6 +1020,7 @@ function selfTest() {
   okList.push(areaColorsTest() ? "areaColors" : "areaColors FAIL");
   okList.push(lineStyleTest() ? "lineStyle" : "lineStyle FAIL");
   okList.push(storageLimitTest() ? "storageLimit" : "storageLimit FAIL");
+  okList.push(xssHygieneTest() ? "xssHygiene" : "xssHygiene FAIL");
   const ok = okList.every(x => !x.endsWith("FAIL"));
   document.getElementById("selftest").textContent = ok ? "selftest:OK" : "selftest:FAIL " + okList.join(",");
   if (!ok) console.error("Selbsttest fehlgeschlagen:", okList);
