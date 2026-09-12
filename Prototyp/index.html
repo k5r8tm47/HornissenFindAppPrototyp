@@ -61,9 +61,10 @@
   .panel .field.ok .lab { color: #15803d; font-weight: 600; }
   .panel .field.ok input { border-color: #15803d; }
   .tag-aktiv { background: #fecaca; color: #991b1b; }
-  .tag-entfernt { background: #e5e7eb; color: #374151; }
+  .tag-entfernt { background: #dcfce7; color: #166534; }
   .tag-nichtGefunden { background: #e5e7eb; color: #374151; }
-  .tag-nichtZugaenglich { background: #d1d5db; color: #4b5563; }
+  .tag-nichtZugaenglich { background: #fee2e2; color: #b91c1c; }
+  .tag-wirdEntfernt { background: #fef9c3; color: #854d0e; }
   .tag-grau { background: #e5e7eb; color: #6b7280; }
   .tag-geschätzt { background: #fef3c7; color: #92400e; }
   .hint {
@@ -402,6 +403,13 @@ function mergeAreas(computed) {
 
 /* ---------- Admin-Status ---------- */
 
+function areaColorsTest() {
+  const c = areaColors;
+  return c("aktiv").circle === "#ea580c" && c("nichtZugaenglich").fill === "#fca5a5" &&
+         c("wirdEntfernt").circle === "#eab308" && c("entfernt").circle === "#16a34a" &&
+         c("unbekannt").circle === "#6b7280";
+}
+
 function setAreaStatus(areaId, status) {
   const a = state.nestAreas.find(x => x.id === areaId);
   if (!a || a.status === status) return;
@@ -413,11 +421,13 @@ function setAreaStatus(areaId, status) {
     log(`Bereich #${a.id}: „Bereich nicht zugänglich" – ${a.ids.length} Linien grau hinterlegt.`);
   } else if (status === "entfernt") {
     a.ids.forEach(id => { const s = state.sightings.find(x => x.id === id); if (s) { s.gray = false; s.hidden = true; } });
-    a.hidden = true;
+    a.hidden = false;
     log(`Bereich #${a.id}: „Nest entfernt" – ${a.ids.length} zugehörige Linien entfernt.`);
   } else if (status === "nichtGefunden") {
     a.hidden = true;
     log(`Bereich #${a.id}: „Nest nicht gefunden" – Suchbereich gelöscht, Linien bleiben.`);
+  } else if (status === "wirdEntfernt") {
+    log(`Bereich #${a.id}: „Wird entfernt" markiert.`);
   } else if (status === "aktiv") {
     a.hidden = false;
     log(`Bereich #${a.id} reaktiviert (zuvor: ${old}).`);
@@ -502,14 +512,16 @@ function renderMap() {
   if (role === "admin") {
     const areas = state.nestAreas.filter(a => !a.hidden);
     areas.forEach(a => {
-      const gray = a.status === "nichtZugaenglich";
-      const col = gray ? "#6b7280" : "#ea580c";
-      L.circle([a.lat, a.lng], { radius: a.radius, color: col, fillColor: gray ? "#9ca3af" : "#fdba74", fillOpacity: gray ? 0.35 : 0.2, weight: 2 }).addTo(nestLayer);
-      if (!gray) {
+      const col = areaColors(a.status);
+      const circle = L.circle([a.lat, a.lng], { radius: a.radius, color: col.circle, fillColor: col.fill, fillOpacity: col.opacity, weight: 3 })
+        .addTo(nestLayer)
+        .bindPopup(`<b>Nestbereich #${a.id}</b><br><span class="tag tag-${a.status}">${statusLabel(a.status)}</span><br><span class="meta">${a.lat.toFixed(5)}, ${a.lng.toFixed(5)}</span><br><span class="dir">aus ${a.count} Linien</span><br><a href="${a.link}" target="_blank" rel="noopener">Google-Maps-Link</a><br><span style="font-size:12px;color:#444">Klick auf Kreis = Status wechseln (rot/gelb/grün)</span>`);
+      if (a.status === "aktiv") {
         L.marker([a.lat, a.lng], { icon: L.divIcon({ className: "", html: "<div style='width:26px;height:26px;background:#fff;border:3px solid #ea580c;border-radius:50%;text-align:center;line-height:22px;font-weight:800;color:#ea580c;font-size:14px'><b>!</b></div>", iconSize: [26, 26], iconAnchor: [13, 13] }) })
           .addTo(nestLayer)
-          .bindPopup(`<b>Wahrscheinlicher Nestbereich #${a.id}</b><br><span class="meta">${a.lat.toFixed(5)}, ${a.lng.toFixed(5)}</span><br><span class="dir">aus ${a.count} Linien</span><br><a href="${a.link}" target="_blank" rel="noopener">Google-Maps-Link</a>`);
+          .bindPopup(circle.getPopup());
       }
+      circle.on("click", (e) => { L.DomEvent.stopPropagation(e); cycleAreaStatus(a.id); });
     });
   }
 }
@@ -809,7 +821,23 @@ function renderTabSights() {
 window.zoomTo = function (lat, lng) { map.setView([lat, lng], 16); document.getElementById("adminPanel").style.display = "block"; };
 
 function statusLabel(st) {
-  return { aktiv: "aktiv", entfernt: "Nest entfernt", nichtGefunden: "nicht gefunden", nichtZugaenglich: "nicht zugänglich", erledigt: "erledigt" }[st] || st;
+  return { aktiv: "aktiv", entfernt: "Nest entfernt", nichtGefunden: "nicht gefunden", nichtZugaenglich: "nicht zugänglich", wirdEntfernt: "wird entfernt", erledigt: "erledigt" }[st] || st;
+}
+
+function areaColors(st) {
+  return {
+    aktiv: { circle: "#ea580c", fill: "#fdba74", opacity: 0.2 },
+    nichtZugaenglich: { circle: "#dc2626", fill: "#fca5a5", opacity: 0.4 },
+    wirdEntfernt: { circle: "#eab308", fill: "#fde047", opacity: 0.4 },
+    entfernt: { circle: "#16a34a", fill: "#86efac", opacity: 0.3 }
+  }[st] || { circle: "#6b7280", fill: "#9ca3af", opacity: 0.35 };
+}
+
+function cycleAreaStatus(id) {
+  const a = state.nestAreas.find(x => x.id === id);
+  if (!a) return;
+  const order = ["aktiv", "nichtZugaenglich", "wirdEntfernt", "entfernt"];
+  setAreaStatus(id, order[(order.indexOf(a.status) + 1) % order.length]);
 }
 
 function renderTabAreas() {
@@ -825,6 +853,7 @@ function renderTabAreas() {
       `<div class="meta">${a.lat.toFixed(5)}, ${a.lng.toFixed(5)} · aus ${a.count} Linien</div>` +
       `<div class="dir"><a href="${a.link}" target="_blank" rel="noopener">Google-Maps-Link</a></div>` +
       `<div style="margin-top:4px">` +
+      `<button class="small" onclick="setStatus(${a.id},'wirdEntfernt')">Wird entfernt</button>` +
       `<button class="small" onclick="setStatus(${a.id},'entfernt')">Nest entfernt</button>` +
       `<button class="small" onclick="setStatus(${a.id},'nichtGefunden')">Nicht gefunden</button>` +
       `<button class="small" onclick="setStatus(${a.id},'nichtZugaenglich')">Bereich nicht zugänglich</button></div>`;
@@ -945,6 +974,7 @@ function selfTest() {
   okList.push(effLenTest() ? "effLen" : "effLen FAIL");
   okList.push((e => e === 90 + (12 - 6) / 14 * 180)(estimateBearing("12:00")) ? "estimateBearing" : "estimateBearing FAIL");
   okList.push(visibleFilterTest() ? "visibleFilter" : "visibleFilter FAIL");
+  okList.push(areaColorsTest() ? "areaColors" : "areaColors FAIL");
   const ok = okList.every(x => !x.endsWith("FAIL"));
   document.getElementById("selftest").textContent = ok ? "selftest:OK" : "selftest:FAIL " + okList.join(",");
   if (!ok) console.error("Selbsttest fehlgeschlagen:", okList);
