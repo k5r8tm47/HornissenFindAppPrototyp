@@ -137,13 +137,13 @@
 </div>
 
 <div class="hint" id="hint"></div>
-<div class="legend">
-  <div><span class="lg lg-line lg-line-own" style="vertical-align:2px"></span> Eigene Flugrichtung</div>
-  <div><span class="lg lg-line lg-line-other" style="vertical-align:2px"></span> Flugrichtung anderer</div>
-  <div><span class="lg lg-line lg-line-gray" style="vertical-align:2px"></span> Linie grau (Bereich nicht zugänglich)</div>
-  <div><span class="lg lg-nest"></span> Wahrscheinlicher Nestbereich</div>
-  <div><span class="lg lg-own"></span> Eigene Sichtung</div>
-  <div><span class="lg lg-other"></span> Sichtung anderer</div>
+<div class="legend" id="legend">
+  <div id="lgOwnDir"><span class="lg lg-line lg-line-own" style="vertical-align:2px"></span> Eigene Flugrichtung</div>
+  <div id="lgOtherDir" class="lg-admin"><span class="lg lg-line lg-line-other" style="vertical-align:2px"></span> Flugrichtung anderer</div>
+  <div id="lgGray" class="lg-admin"><span class="lg lg-line lg-line-gray" style="vertical-align:2px"></span> Linie grau (Bereich nicht zugänglich)</div>
+  <div id="lgNest" class="lg-admin"><span class="lg lg-nest"></span> Wahrscheinlicher Nestbereich</div>
+  <div id="lgOwn"><span class="lg lg-own"></span> Eigene Sichtung</div>
+  <div id="lgOther" class="lg-admin"><span class="lg lg-other"></span> Sichtung anderer</div>
 </div>
 <div class="toast" id="toast"></div>
 <div id="selftest"></div>
@@ -496,17 +496,23 @@ function renderMap() {
     const m = L.marker([s.lat, s.lng], { icon: s.source === "local" ? iconLocal : iconOther }).addTo(sightingsLayer);
     m.bindPopup(linePopup(s));
   });
-  const areas = state.nestAreas.filter(a => !a.hidden);
-  areas.forEach(a => {
-    const gray = a.status === "nichtZugaenglich";
-    const col = gray ? "#6b7280" : "#ea580c";
-    L.circle([a.lat, a.lng], { radius: a.radius, color: col, fillColor: gray ? "#9ca3af" : "#fdba74", fillOpacity: gray ? 0.35 : 0.2, weight: 2 }).addTo(nestLayer);
-    if (!gray) {
-      L.marker([a.lat, a.lng], { icon: L.divIcon({ className: "", html: "<div style='width:26px;height:26px;background:#fff;border:3px solid #ea580c;border-radius:50%;text-align:center;line-height:22px;font-weight:800;color:#ea580c;font-size:14px'><b>!</b></div>", iconSize: [26, 26], iconAnchor: [13, 13] }) })
-        .addTo(nestLayer)
-        .bindPopup(`<b>Wahrscheinlicher Nestbereich #${a.id}</b><br><span class="meta">${a.lat.toFixed(5)}, ${a.lng.toFixed(5)}</span><br><span class="dir">aus ${a.count} Linien</span><br><a href="${a.link}" target="_blank" rel="noopener">Google-Maps-Link</a>`);
-    }
-  });
+  if (role === "admin") {
+    const areas = state.nestAreas.filter(a => !a.hidden);
+    areas.forEach(a => {
+      const gray = a.status === "nichtZugaenglich";
+      const col = gray ? "#6b7280" : "#ea580c";
+      L.circle([a.lat, a.lng], { radius: a.radius, color: col, fillColor: gray ? "#9ca3af" : "#fdba74", fillOpacity: gray ? 0.35 : 0.2, weight: 2 }).addTo(nestLayer);
+      if (!gray) {
+        L.marker([a.lat, a.lng], { icon: L.divIcon({ className: "", html: "<div style='width:26px;height:26px;background:#fff;border:3px solid #ea580c;border-radius:50%;text-align:center;line-height:22px;font-weight:800;color:#ea580c;font-size:14px'><b>!</b></div>", iconSize: [26, 26], iconAnchor: [13, 13] }) })
+          .addTo(nestLayer)
+          .bindPopup(`<b>Wahrscheinlicher Nestbereich #${a.id}</b><br><span class="meta">${a.lat.toFixed(5)}, ${a.lng.toFixed(5)}</span><br><span class="dir">aus ${a.count} Linien</span><br><a href="${a.link}" target="_blank" rel="noopener">Google-Maps-Link</a>`);
+      }
+    });
+  }
+}
+
+function updateLegend() {
+  document.querySelectorAll(".lg-admin").forEach(el => { el.style.display = role === "admin" ? "" : "none"; });
 }
 
 let draftLine = null;
@@ -931,6 +937,7 @@ function selfTest() {
   okList.push(isect && Math.abs(isect.y - toXY({ lat: 49.775, lng: 9.965 }).y) < 1 && Math.abs(isect.x - toXY({ lat: 49.775, lng: 9.965 }).x) < 1 ? "segIntersect" : "segIntersect FAIL");
   okList.push(effLenTest() ? "effLen" : "effLen FAIL");
   okList.push((e => e === 90 + (12 - 6) / 14 * 180)(estimateBearing("12:00")) ? "estimateBearing" : "estimateBearing FAIL");
+  okList.push(visibleFilterTest() ? "visibleFilter" : "visibleFilter FAIL");
   const ok = okList.every(x => !x.endsWith("FAIL"));
   document.getElementById("selftest").textContent = ok ? "selftest:OK" : "selftest:FAIL " + okList.join(",");
   if (!ok) console.error("Selbsttest fehlgeschlagen:", okList);
@@ -945,6 +952,20 @@ function effLenTest() {
   return la === effLine(a) && lb === effLine(b);
 }
 
+function visibleFilterTest() {
+  const role0 = role;
+  const demo = state.sightings.filter(s => s.source !== "local");
+  const hasLocal = state.sightings.some(s => s.source === "local");
+  role = "sichtender";
+  const forSighter = visibleSightings();
+  role = "admin";
+  const forAdmin = visibleSightings();
+  role = role0;
+  const sighterOnlyLocal = forSighter.every(s => s.source === "local");
+  const adminSeesAll = forAdmin.length === state.sightings.filter(s => !s.hidden).length;
+  return (demo.length === 0 || sighterOnlyLocal) && adminSeesAll && (hasLocal || forSighter.length === 0);
+}
+
 /* ---------- Init ---------- */
 
 function init() {
@@ -954,6 +975,7 @@ function init() {
     document.getElementById("btnModeAdmin").classList.remove("active");
     document.getElementById("adminPanel").style.display = "none";
     renderMap();
+    updateLegend();
     showHint("");
     if (!draft) startSighting();
   };
@@ -964,6 +986,7 @@ function init() {
     document.getElementById("btnModeSighting").classList.remove("active");
     document.getElementById("sightingPanel").style.display = "none";
     renderMap();
+    updateLegend();
     renderAdminPanels();
     showHint("Admin-Ansicht: alle Sichtungen und Flugrichtungen. Kreuzungsbereiche (≥3 Striche) = Nestverdacht mit Google-Maps-Link.");
   };
@@ -979,6 +1002,7 @@ function init() {
   document.getElementById("fileImport").onchange = handleImport;
   startSighting();
   refresh();
+  updateLegend();
   selfTest();
   if (new URLSearchParams(location.search).has("adm")) {
     role = "admin";
