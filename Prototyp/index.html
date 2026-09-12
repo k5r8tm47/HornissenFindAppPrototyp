@@ -492,7 +492,10 @@ function renderMap() {
     const end = destPoint(p, b, effLine(s));
     const line = L.polyline([p, end], lineStyle(s)).addTo(sightingsLayer);
     line.bindPopup(linePopup(s));
-    arrowAt(end, b, lineColor(s)).addTo(sightingsLayer);
+    const arrow = arrowAt(end, b, lineColor(s), s.source === "local").addTo(sightingsLayer);
+    if (s.source === "local") {
+      arrow.on("mousedown touchstart", (e) => { L.DomEvent.stopPropagation(e); enableLineDrag(s, line, arrow, () => { save(); log(`Sichtung ${s.id}: Flugrichtung ${Math.round(bearingOf(s))}°, Länge ${lineLen(s)} m (per Drag).`); refresh(); }); });
+    }
     const m = L.marker([s.lat, s.lng], { icon: s.source === "local" ? iconLocal : iconOther }).addTo(sightingsLayer);
     m.bindPopup(linePopup(s));
   });
@@ -531,7 +534,7 @@ function renderDraft() {
       const end = destPoint(p, draft.bearing, draftFlightLen());
       draftLine = L.polyline([p, end], { color: "#b45309", weight: 3 }).addTo(draftMarkerLayer);
       draftArrow = arrowAt(end, draft.bearing, "#b45309", true).addTo(draftMarkerLayer);
-      draftArrow.on("mousedown touchstart", (e) => { if (draft) { L.DomEvent.stopPropagation(e); enableLineDrag(); } });
+      draftArrow.on("mousedown touchstart", (e) => { if (draft) { L.DomEvent.stopPropagation(e); enableLineDrag(draft, draftLine, draftArrow, null); } });
     }
     dragMarker = L.marker([draft.lat, draft.lng], { icon: iconLocal, draggable: true }).addTo(draftMarkerLayer);
     dragMarker.on("drag", (e) => {
@@ -550,6 +553,9 @@ function renderDraft() {
 }
 function draftFlightLen() {
   return Math.min(LINE_M, (draft.len != null && draft.len > 0) ? draft.len : LINE_M);
+}
+function lineLen(s) {
+  return Math.min(LINE_M, (s.len != null && s.len > 0) ? s.len : LINE_M);
 }
 
 /* ---------- Sichtungs-UI ---------- */
@@ -638,25 +644,25 @@ let longPressTimer = null;
 let longPressFiredAt = 0;
 let draggingLine = false;
 
-function enableLineDrag() {
-  if (draggingLine || !draft || draft.lat == null || draft.bearing == null) return;
+function enableLineDrag(source, lineEl, arrowEl, doneCb) {
+  if (draggingLine || !source || source.lat == null || source.bearing == null) return;
   draggingLine = true;
   map.dragging.disable();
   map.getContainer().classList.add("dragline");
   const update = () => {
     const ll = map.mouseEventToLatLng(dragLatestPos);
     if (!ll) return;
-    const base = { lat: draft.lat, lng: draft.lng };
-    draft.bearing = bearing(base, ll);
-    draft.len = Math.max(50, Math.min(LINE_M, dist(base, ll)));
-    draft.bearingMode = "map";
-    const end = destPoint(base, draft.bearing, draftFlightLen());
-    if (draftLine) draftLine.setLatLngs([[base.lat, base.lng], [end.lat, end.lng]]);
-    if (draftArrow) draftArrow.setLatLng([end.lat, end.lng]);
-    refreshDraftFields();
+    const base = { lat: source.lat, lng: source.lng };
+    source.bearing = bearing(base, ll);
+    source.len = Math.max(50, Math.min(LINE_M, dist(base, ll)));
+    source.bearingMode = "map";
+    const end = destPoint(base, source.bearing, lineLen(source));
+    if (lineEl) lineEl.setLatLngs([[base.lat, base.lng], [end.lat, end.lng]]);
+    if (arrowEl) arrowEl.setLatLng([end.lat, end.lng]);
+    if (source === draft) refreshDraftFields();
   };
   const move = (e) => {
-    if (!draft) return;
+    if (!source) return;
     const oe = e.originalEvent || e;
     dragLatestPos = oe.touches ? oe.touches[0] : oe;
     update();
@@ -669,7 +675,8 @@ function enableLineDrag() {
     map.off("mouseup", done);
     map.off("touchend", done);
     draggingLine = false;
-    if (draft) { renderDraft(); refreshDraftFields(); }
+    if (source === draft) { renderDraft(); refreshDraftFields(); }
+    else if (doneCb) doneCb();
   };
   map.on("mousemove", move);
   map.on("touchmove", move);
