@@ -447,6 +447,14 @@ function lineStyle(s) {
   return { color, weight: gray ? 2 : 3, opacity: gray ? 0.6 : 1 };
 }
 
+function lineStyleTest() {
+  const g = lineStyle({ gray: true, source: "local" });
+  const n = lineStyle({ gray: false, source: "local" });
+  const o = lineStyle({ gray: false, source: "demo" });
+  return g.color === "#9ca3af" && g.weight < n.weight && g.opacity < n.opacity &&
+         n.color === "#b45309" && o.color === "#2563eb";
+}
+
 function linePopup(s) {
   const b = bearingOf(s);
   const dirTxt = b == null ? "keine Richtung (Uhrzeit-Schätzung nicht möglich)" : (hasBearing(s) ? (s.bearingMode === "compass" ? `Kompass ${Math.round(b)}°` : `~${Math.round(b)}°`) : `geschätzt (${s.time})`);
@@ -975,6 +983,7 @@ function selfTest() {
   okList.push((e => e === 90 + (12 - 6) / 14 * 180)(estimateBearing("12:00")) ? "estimateBearing" : "estimateBearing FAIL");
   okList.push(visibleFilterTest() ? "visibleFilter" : "visibleFilter FAIL");
   okList.push(areaColorsTest() ? "areaColors" : "areaColors FAIL");
+  okList.push(lineStyleTest() ? "lineStyle" : "lineStyle FAIL");
   const ok = okList.every(x => !x.endsWith("FAIL"));
   document.getElementById("selftest").textContent = ok ? "selftest:OK" : "selftest:FAIL " + okList.join(",");
   if (!ok) console.error("Selbsttest fehlgeschlagen:", okList);
