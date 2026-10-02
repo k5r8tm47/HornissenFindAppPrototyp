@@ -1,4 +1,4 @@
-const CACHE = "hornissenfind-v1";
+﻿const CACHE = "hornissenfind-v1";
 const ASSETS = [
   "./",
   "./index.html",
@@ -35,3 +35,5 @@ self.addEventListener("fetch", (event) => {
       .catch(() => caches.match(event.request))
   );
 });
+// cb 1790955888
+
