@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="icon.svg">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="lib/leaflet/leaflet.css">
 <style>
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; font-family: system-ui, sans-serif; }
@@ -149,7 +149,7 @@
 <div class="toast" id="toast"></div>
 <div id="selftest"></div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="lib/leaflet/leaflet.js"></script>
 <script>
 "use strict";
 
@@ -186,10 +186,33 @@ let storageTestDone = false;
 const state = load();
 const map = L.map("map").setView([49.79, 9.93], 13);
 
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-  maxZoom: 19,
-  attribution: "&copy; OpenStreetMap"
-}).addTo(map);
+// Robuste Tile-Layer mit mehreren Fallbacks (keine externen Abhängigkeiten beim CSS/JS mehr)
+const tileProviders = [
+  { url: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", attr: "&copy; OpenStreetMap &copy; CARTO", subdomains: "abcd" },
+  { url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", attr: "&copy; OpenStreetMap", subdomains: "abc" },
+  { url: "https://{s}.tile.thunderforest.com/landscape/{z}/{x}/{y}.png?apikey=", attr: "&copy; Thunderforest", subdomains: "abc" }
+];
+
+function addTileLayer(index) {
+  if (index >= tileProviders.length) {
+    console.error("Alle Tile-Provider fehlgeschlagen");
+    return;
+  }
+  const p = tileProviders[index];
+  const layer = L.tileLayer(p.url, {
+    maxZoom: 19,
+    attribution: p.attr,
+    subdomains: p.subdomains,
+    // Wichtig: crossOrigin nicht gesetzt -> Leaflet nutzt Standard, funktioniert bei HTTPS
+  });
+  layer.on("tileerror", (e) => {
+    console.warn("Tile-Fehler (" + p.url + "), versuche nächsten Provider...");
+    layer.remove();
+    addTileLayer(index + 1);
+  });
+  layer.addTo(map);
+}
+addTileLayer(0);
 
 const draftMarkerLayer = L.layerGroup().addTo(map);
 const sightingsLayer = L.layerGroup().addTo(map);
@@ -1091,9 +1114,7 @@ function init() {
     role = "admin";
     document.getElementById("btnModeAdmin").click();
   }
-  if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
-    navigator.serviceWorker.register("./sw.js").catch(err => console.warn("SW-Registrierung fehlgeschlagen", err));
-  }
+  
 }
 
 init();
