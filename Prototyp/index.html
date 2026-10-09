@@ -660,7 +660,6 @@ function openSightingPanel() {
     `<input type="number" id="inpCompass" min="0" max="359" step="1" placeholder="Kompass 0-359°">` +
     `<button class="small" id="btnCompass" style="min-height:40px">Strich setzen</button></div></div>` +
     `<div class="field" id="fieldTime"><input type="time" id="inpTime" value="${draft.time}"></div>` +
-    `<button class="small" id="btnNow" style="margin:4px 0 8px; min-height:36px">Jetzt</button>` +
     `<div class="field" id="fieldNote"><span class="lab">Notiz (optional)</span>` +
     `<input type="text" id="inpNote" placeholder="z. B. am Nektarfeld" value="${escapeHtml(draft.note)}"></div>` +
     `<div class="btns">` +
@@ -669,26 +668,18 @@ function openSightingPanel() {
   document.getElementById("sightingPanel").style.display = "block";
   document.getElementById("btnCompass").onclick = () => {
     const v = parseFloat(document.getElementById("inpCompass").value);
-    if (v == null || isNaN(v)) { alert("Kompassrichtung 0–359° eingeben."); return; }
+    if (v == null || isNaN(v)) { alert("Kompassrichtung 0-359� eingeben."); return; }
     draft.bearing = ((v % 360) + 360) % 360;
     draft.bearingMode = "compass";
     draft.len = 800;
+    const inp = document.getElementById("inpCompass");
+    if (inp) inp.value = Math.round(((draft.bearing % 360) + 360) % 360);
     renderDraft();
     refreshDraftFields();
   };
   document.getElementById("btnSend").onclick = send;
   document.getElementById("btnCancel").onclick = cancelSighting;
   document.getElementById("inpTime").onchange = () => { draft.time = document.getElementById("inpTime").value; refreshDraftFields(); };
-  const btnNow = document.getElementById("btnNow");
-  if (btnNow) btnNow.onclick = () => {
-    const now = new Date();
-    const hh = String(now.getHours()).padStart(2, '0');
-    const mm = String(now.getMinutes()).padStart(2, '0');
-    const val = hh + ':' + mm;
-    document.getElementById("inpTime").value = val;
-    draft.time = val;
-    refreshDraftFields();
-  };
   document.getElementById("inpNote").onchange = () => { draft.note = document.getElementById("inpNote").value; refreshDraftFields(); };
   refreshDraftFields();
 }
@@ -710,7 +701,7 @@ function refreshDraftFields() {
   if (flTime) flTime.classList.toggle("ok", !!draft.time);
   if (flDir) flDir.classList.toggle("ok", draft.bearing != null);
   const flNote = document.getElementById("fieldNote");
-  if (flNote) flNote.classList.toggle("ok", !!draft.note);
+  if (flNote) flNote.classList.remove("ok");
   const btn = document.getElementById("btnSend");
   if (btn) {
     const ready = draft.lat != null && draft.time && draft.bearing != null;
@@ -741,7 +732,11 @@ function enableLineDrag(source, lineEl, arrowEl, doneCb) {
     const end = destPoint(base, source.bearing, lineLen(source));
     if (lineEl) lineEl.setLatLngs([[base.lat, base.lng], [end.lat, end.lng]]);
     if (arrowEl) arrowEl.setLatLng([end.lat, end.lng]);
-    if (source === draft) refreshDraftFields();
+    if (source === draft) {
+      const inp = document.getElementById("inpCompass");
+      if (inp && draft.bearing != null) inp.value = Math.round((((draft.bearing % 360) + 360) % 360));
+      refreshDraftFields();
+    }
   };
   const move = (e) => {
     if (!source) return;
@@ -798,6 +793,8 @@ map.on("click", (e) => {
     draft.bearing = bearing({ lat: draft.lat, lng: draft.lng }, e.latlng);
     draft.bearingMode = "map";
     draft.len = 800;
+    const inp = document.getElementById("inpCompass");
+    if (inp) inp.value = Math.round(((draft.bearing % 360) + 360) % 360);
     renderDraft();
     refreshDraftFields();
   }
