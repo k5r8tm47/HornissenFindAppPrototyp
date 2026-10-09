@@ -653,9 +653,8 @@ function openSightingPanel() {
   const form = document.getElementById("sightingForm");
   form.innerHTML =
     `<div class="field" id="fieldLoc"><span class="lab">Standort (Einfach-Click auf die Karte)</span></div>` +
-    `<div class="field" id="fieldTime"><span class="lab">Ungefähre Uhrzeit der Sichtung (24 h)</span>` +
-    `<input type="time" id="inpTime" value="${draft.time}"></div>` +
-    `<div class="field" id="fieldDir"><span class="lab">Flugrichtung (langes Drücken auf Pfeil auf der Karte)</span>` +
+    `<div class="field" id="fieldTime"><input type="time" id="inpTime" value="${draft.time}"></div>` +
+    `<div class="field" id="fieldDir"><span class="lab">Richtung (Doppel-Click auf die Karte)</span>` +
     `<div style="display:flex;gap:6px;margin:4px 0 2px">` +
     `<input type="number" id="inpCompass" min="0" max="359" step="1" placeholder="Kompass 0–359°">` +
     `<button class="small" id="btnCompass" style="min-height:40px">Strich setzen</button></div></div>` +
