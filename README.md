@@ -39,3 +39,5 @@ Entwicklungsaufgaben werden im GitHub-Projekt [HornissenFindApp Prototyp - Entwi
 ## Status
 
 Funktionierender Mini-Prototyp (eine `index.html` ohne Build-Schritt).
+
+Lokal starten: `Prototyp/index.html` im Browser öffnen. Leaflet liegt lokal unter `Prototyp/lib/leaflet/`.

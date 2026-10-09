@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="icon.svg">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="lib/leaflet/leaflet.css">
 <style>
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; font-family: system-ui, sans-serif; }
@@ -149,7 +149,7 @@
 <div class="toast" id="toast"></div>
 <div id="selftest"></div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="lib/leaflet/leaflet.js"></script>
 <script>
 "use strict";
 
@@ -186,10 +186,35 @@ let storageTestDone = false;
 const state = load();
 const map = L.map("map").setView([49.79, 9.93], 13);
 
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-  maxZoom: 19,
-  attribution: "&copy; OpenStreetMap"
-}).addTo(map);
+// Tile-Provider ohne API-Key; Fallback, falls OSM nicht erreichbar ist
+const tileProviders = [
+  { url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", attr: "&copy; OpenStreetMap", subdomains: "abc", maxZoom: 19 },
+  { url: "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", attr: "&copy; OpenStreetMap &copy; OpenTopoMap (CC-BY-SA)", subdomains: "abc", maxZoom: 17 }
+];
+const TILE_ERROR_THRESHOLD = 3;
+
+function addTileLayer(index) {
+  if (index >= tileProviders.length) {
+    console.error("Alle Tile-Provider fehlgeschlagen");
+    return;
+  }
+  const p = tileProviders[index];
+  const layer = L.tileLayer(p.url, { maxZoom: p.maxZoom, attribution: p.attr, subdomains: p.subdomains });
+  // Nur wechseln, wenn noch keine Kachel geladen wurde und mehrere Fehler auftraten; höchstens einmal pro Layer.
+  let loaded = 0, errors = 0, switched = false;
+  layer.on("tileload", () => { loaded++; });
+  layer.on("tileerror", () => {
+    errors++;
+    if (switched || loaded > 0 || errors < TILE_ERROR_THRESHOLD) return;
+    switched = true;
+    console.warn("Tile-Provider nicht erreichbar (" + p.url + "), versuche nächsten Provider...");
+    layer.off();
+    layer.remove();
+    addTileLayer(index + 1);
+  });
+  layer.addTo(map);
+}
+addTileLayer(0);
 
 const draftMarkerLayer = L.layerGroup().addTo(map);
 const sightingsLayer = L.layerGroup().addTo(map);
@@ -1098,8 +1123,6 @@ function init() {
 
 init();
 </script>
-<!-- cache-bust: 45c4ac2 -->
-<!-- cb:1790954858 -->
 </body>
 </html>
 
