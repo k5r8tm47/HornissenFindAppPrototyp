@@ -1111,24 +1111,18 @@ function init() {
     updateLegend();
     showHint("");
     if (!draft) startSighting();
-    else openSightingPanel();
+    else { openSightingPanel(); renderDraft(); }
   };
   document.getElementById("btnModeAdmin").onclick = () => {
-    const hadDraft = draft != null;
     role = "admin";
     document.getElementById("btnModeAdmin").classList.add("active");
     document.getElementById("btnModeSighting").classList.remove("active");
     document.getElementById("sightingPanel").style.display = "none";
+    draftMarkerLayer.clearLayers();
     renderMap();
     updateLegend();
     renderAdminPanels();
     showHint("Admin-Ansicht: alle Sichtungen und Flugrichtungen. Kreuzungsbereiche (>= 3 Striche) = Nestverdacht mit Google-Maps-Link.");
-    if (hadDraft) {
-      draftMarkerLayer.clearLayers();
-      renderDraft();
-      document.getElementById("sightingPanel").style.display = "block";
-      showHint("");
-    }
   };
   document.querySelectorAll(".tabs button").forEach(b => {
     b.onclick = () => {
