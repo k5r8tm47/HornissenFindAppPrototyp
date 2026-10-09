@@ -645,11 +645,20 @@ function startSighting() {
 }
 
 function cancelSighting() {
-  draft = null;
-  cancelLineDrag();
-  renderDraft();
-  document.getElementById("sightingPanel").style.display = "none";
-  showHint("");
+  if (draft) {
+    draft.lat = null;
+    draft.lng = null;
+    draft.bearing = null;
+    draft.bearingMode = null;
+    draft.time = "";
+    draft.note = "";
+    if (document.getElementById("inpCompass")) document.getElementById("inpCompass").value = "";
+    if (document.getElementById("inpTime")) document.getElementById("inpTime").value = "";
+    if (document.getElementById("inpNote")) document.getElementById("inpNote").value = "";
+    cancelLineDrag();
+    renderDraft();
+    refreshDraftFields();
+  }
 }
 
 function openSightingPanel() {
@@ -665,7 +674,7 @@ function openSightingPanel() {
     `<input type="text" id="inpNote" placeholder="z. B. am Nektarfeld" value="${escapeHtml(draft.note)}"></div>` +
     `<div class="btns">` +
     `<button class="action cancel" id="btnSend">Senden</button>` +
-    `<button class="action cancel" id="btnCancel" style="background:#6b7280">Abbrechen</button></div>`;
+    `<button class="action cancel" id="btnCancel" style="background:#6b7280">Löschen</button></div>`;
   document.getElementById("sightingPanel").style.display = "block";
   document.getElementById("btnCompass").onclick = () => {
     const v = parseFloat(document.getElementById("inpCompass").value);
