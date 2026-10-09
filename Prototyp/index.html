@@ -58,7 +58,9 @@
   .panel .item .tag { display: inline-block; font-size: 11px; padding: 2px 6px; border-radius: 8px; margin-left: 6px; }
   .panel .field { margin: 4px 0; transition: opacity .2s; }
   .panel .field .lab { display: block; margin: 8px 0 2px; font-size: 13px; color: #dc2626; font-weight: 600; }
+  .panel #fieldNote .lab { color: #444; font-weight: 400; }
   .panel .field.ok .lab { color: #15803d; font-weight: 600; }
+  .panel #fieldNote.ok .lab { color: #15803d; font-weight: 600; }
   .panel .field.ok input { border-color: #15803d; }
   .tag-aktiv { background: #fecaca; color: #991b1b; }
   .tag-entfernt { background: #dcfce7; color: #166534; }
@@ -653,12 +655,13 @@ function openSightingPanel() {
   const form = document.getElementById("sightingForm");
   form.innerHTML =
     `<div class="field" id="fieldLoc"><span class="lab">Standort (Einfach-Click auf die Karte)</span></div>` +
-    `<div class="field" id="fieldTime"><input type="time" id="inpTime" value="${draft.time}"></div>` +
     `<div class="field" id="fieldDir"><span class="lab">Richtung (Doppel-Click auf die Karte)</span>` +
     `<div style="display:flex;gap:6px;margin:4px 0 2px">` +
-    `<input type="number" id="inpCompass" min="0" max="359" step="1" placeholder="Kompass 0–359°">` +
+    `<input type="number" id="inpCompass" min="0" max="359" step="1" placeholder="Kompass 0-359°">` +
     `<button class="small" id="btnCompass" style="min-height:40px">Strich setzen</button></div></div>` +
-    `<div class="field"><span class="lab">Notiz (optional)</span>` +
+    `<div class="field" id="fieldTime"><input type="time" id="inpTime" value="${draft.time}"></div>` +
+    `<button class="small" id="btnNow" style="margin:4px 0 8px; min-height:36px">Jetzt</button>` +
+    `<div class="field" id="fieldNote"><span class="lab">Notiz (optional)</span>` +
     `<input type="text" id="inpNote" placeholder="z. B. am Nektarfeld" value="${escapeHtml(draft.note)}"></div>` +
     `<div class="btns">` +
     `<button class="action cancel" id="btnSend">Senden</button>` +
@@ -676,7 +679,17 @@ function openSightingPanel() {
   document.getElementById("btnSend").onclick = send;
   document.getElementById("btnCancel").onclick = cancelSighting;
   document.getElementById("inpTime").onchange = () => { draft.time = document.getElementById("inpTime").value; refreshDraftFields(); };
-  document.getElementById("inpNote").onchange = () => { draft.note = document.getElementById("inpNote").value; };
+  const btnNow = document.getElementById("btnNow");
+  if (btnNow) btnNow.onclick = () => {
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    const val = hh + ':' + mm;
+    document.getElementById("inpTime").value = val;
+    draft.time = val;
+    refreshDraftFields();
+  };
+  document.getElementById("inpNote").onchange = () => { draft.note = document.getElementById("inpNote").value; refreshDraftFields(); };
   refreshDraftFields();
 }
 
@@ -696,6 +709,8 @@ function refreshDraftFields() {
   if (flLoc) flLoc.classList.toggle("ok", draft.lat != null);
   if (flTime) flTime.classList.toggle("ok", !!draft.time);
   if (flDir) flDir.classList.toggle("ok", draft.bearing != null);
+  const flNote = document.getElementById("fieldNote");
+  if (flNote) flNote.classList.toggle("ok", !!draft.note);
   const btn = document.getElementById("btnSend");
   if (btn) {
     const ready = draft.lat != null && draft.time && draft.bearing != null;
