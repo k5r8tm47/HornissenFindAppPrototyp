@@ -41,3 +41,5 @@ Entwicklungsaufgaben werden im GitHub-Projekt [HornissenFindApp Prototyp - Entwi
 Funktionierender Mini-Prototyp (eine `index.html` ohne Build-Schritt).
 
 Lokal starten: `Prototyp/index.html` im Browser öffnen. Leaflet liegt lokal unter `Prototyp/lib/leaflet/`.
+
+Hinweis Kartenkacheln: Beim Öffnen per `file://` sendet der Browser keinen Referer, OpenStreetMap blockiert die Kacheln dann (403). Die App nutzt in diesem Fall automatisch Esri World Street Map. Für OSM-Kacheln die App über einen lokalen Webserver ausliefern, z. B. `python -m http.server -d Prototyp 8000` und `http://localhost:8000` öffnen.
