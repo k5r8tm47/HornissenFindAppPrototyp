@@ -564,7 +564,33 @@ function renderMap() {
     line.bindPopup(linePopup(s));
     const arrow = arrowAt(end, b, lineColor(s), s.source === "local").addTo(sightingsLayer);
     if (s.source === "local") {
-      arrow.on("mousedown touchstart", (e) => { L.DomEvent.stopPropagation(e); enableLineDrag(s, line, arrow, () => { save(); log(`Sichtung ${s.id}: Flugrichtung ${Math.round(bearingOf(s))}°, Länge ${lineLen(s)} m (per Drag).`); refresh(); }); });
+      let arrowLongPressTimer = null;
+      arrow.on("mousedown", (e) => {
+        L.DomEvent.stopPropagation(e);
+        if (draggingLine) return;
+        arrowLongPressTimer = setTimeout(() => {
+          enableLineDrag(s, line, arrow, () => { save(); log(`Sichtung ${s.id}: Flugrichtung ${Math.round(bearingOf(s))}°, Länge ${lineLen(s)} m (per Drag).`); refresh(); });
+          arrowLongPressTimer = null;
+        }, 450);
+      });
+      arrow.on("touchstart", (e) => {
+        L.DomEvent.stopPropagation(e);
+        if (draggingLine) return;
+        arrowLongPressTimer = setTimeout(() => {
+          enableLineDrag(s, line, arrow, () => { save(); log(`Sichtung ${s.id}: Flugrichtung ${Math.round(bearingOf(s))}°, Länge ${lineLen(s)} m (per Drag).`); refresh(); });
+          arrowLongPressTimer = null;
+        }, 450);
+      });
+      arrow.on("mouseup touchend touchcancel click", (e) => {
+        if (arrowLongPressTimer) {
+          clearTimeout(arrowLongPressTimer);
+          arrowLongPressTimer = null;
+        }
+      });
+      arrow.on("contextmenu", (e) => {
+        L.DomEvent.preventDefault(e);
+        L.DomEvent.stopPropagation(e);
+      });
     }
     const m = L.marker([s.lat, s.lng], { icon: s.source === "local" ? iconLocal : iconOther }).addTo(sightingsLayer);
     m.bindPopup(linePopup(s));
@@ -606,10 +632,32 @@ function renderDraft() {
       const end = destPoint(p, draft.bearing, draftFlightLen());
       draftLine = L.polyline([p, end], { color: "#b45309", weight: 3 }).addTo(draftMarkerLayer);
       draftArrow = arrowAt(end, draft.bearing, "#b45309", true).addTo(draftMarkerLayer);
-      draftArrow.on("mousedown touchstart", (e) => { if (draft) { L.DomEvent.stopPropagation(e); enableLineDrag(draft, draftLine, draftArrow, null); } });
-      draftArrow.on("taphold", () => {});
-      draftArrow.on("contextmenu", (e) => { L.DomEvent.preventDefault(e); L.DomEvent.stopPropagation(e); enableLineDrag(draft, draftLine, draftArrow, null); });
-      draftArrow.on("longpress", (e) => { L.DomEvent.stopPropagation(e); enableLineDrag(draft, draftLine, draftArrow, null); });
+      let draftArrowLongPressTimer = null;
+      draftArrow.on("mousedown", (e) => {
+        if (!draft) return;
+        L.DomEvent.stopPropagation(e);
+        if (draggingLine) return;
+        draftArrowLongPressTimer = setTimeout(() => {
+          enableLineDrag(draft, draftLine, draftArrow, null);
+          draftArrowLongPressTimer = null;
+        }, 450);
+      });
+      draftArrow.on("touchstart", (e) => {
+        if (!draft) return;
+        L.DomEvent.stopPropagation(e);
+        if (draggingLine) return;
+        draftArrowLongPressTimer = setTimeout(() => {
+          enableLineDrag(draft, draftLine, draftArrow, null);
+          draftArrowLongPressTimer = null;
+        }, 450);
+      });
+      draftArrow.on("mouseup touchend touchcancel click", (e) => {
+        if (draftArrowLongPressTimer) {
+          clearTimeout(draftArrowLongPressTimer);
+          draftArrowLongPressTimer = null;
+        }
+      });
+      draftArrow.on("contextmenu", (e) => { L.DomEvent.preventDefault(e); L.DomEvent.stopPropagation(e); });
     }
     dragMarker = L.marker([draft.lat, draft.lng], { icon: iconLocal, draggable: true }).addTo(draftMarkerLayer);
     dragMarker.on("drag", (e) => {
