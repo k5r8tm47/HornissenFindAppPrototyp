@@ -59,6 +59,9 @@
   .panel .item .tag { display: inline-block; font-size: 11px; padding: 2px 6px; border-radius: 8px; margin-left: 6px; }
   .panel .field { margin: 4px 0; transition: opacity .2s; }
   .panel .field .lab { display: block; margin: 8px 0 2px; font-size: 13px; color: #dc2626; font-weight: 600; }
+  .panel #fieldLoc { margin-top: 0; }
+  .panel #fieldLoc .lab { margin-top: 0; }
+  #sightingPanel { padding-top: 8px; }
   .panel #fieldNote .lab { color: #444; font-weight: 400; }
   .panel .field.ok .lab { color: #15803d; font-weight: 600; }
   .panel #fieldNote.ok .lab { color: #15803d; font-weight: 600; }
@@ -123,7 +126,6 @@
 <input type="file" id="fileImport" accept=".json,application/json" style="display:none">
 
 <div class="panel" id="sightingPanel">
-  <h3>Sichtung erfassen</h3>
   <div id="sightingForm"></div>
 </div>
 
@@ -567,6 +569,7 @@ function renderMap() {
       let arrowLongPressTimer = null;
       arrow.on("mousedown", (e) => {
         L.DomEvent.stopPropagation(e);
+        L.DomEvent.preventDefault(e);
         if (draggingLine) return;
         arrowLongPressTimer = setTimeout(() => {
           enableLineDrag(s, line, arrow, () => { save(); log(`Sichtung ${s.id}: Flugrichtung ${Math.round(bearingOf(s))}°, Länge ${lineLen(s)} m (per Drag).`); refresh(); });
@@ -575,6 +578,7 @@ function renderMap() {
       });
       arrow.on("touchstart", (e) => {
         L.DomEvent.stopPropagation(e);
+        L.DomEvent.preventDefault(e);
         if (draggingLine) return;
         arrowLongPressTimer = setTimeout(() => {
           enableLineDrag(s, line, arrow, () => { save(); log(`Sichtung ${s.id}: Flugrichtung ${Math.round(bearingOf(s))}°, Länge ${lineLen(s)} m (per Drag).`); refresh(); });
@@ -636,6 +640,7 @@ function renderDraft() {
       draftArrow.on("mousedown", (e) => {
         if (!draft) return;
         L.DomEvent.stopPropagation(e);
+        L.DomEvent.preventDefault(e);
         if (draggingLine) return;
         draftArrowLongPressTimer = setTimeout(() => {
           enableLineDrag(draft, draftLine, draftArrow, null);
@@ -645,6 +650,7 @@ function renderDraft() {
       draftArrow.on("touchstart", (e) => {
         if (!draft) return;
         L.DomEvent.stopPropagation(e);
+        L.DomEvent.preventDefault(e);
         if (draggingLine) return;
         draftArrowLongPressTimer = setTimeout(() => {
           enableLineDrag(draft, draftLine, draftArrow, null);
@@ -788,6 +794,9 @@ function enableLineDrag(source, lineEl, arrowEl, doneCb) {
   if (draggingLine || !source || source.lat == null || source.bearing == null) return;
   draggingLine = true;
   map.dragging.disable();
+  map.touchZoom.disable();
+  map.doubleClickZoom.disable();
+  map.scrollWheelZoom.disable();
   map.getContainer().classList.add("dragline");
   const update = () => {
     const ll = map.mouseEventToLatLng(dragLatestPos);
@@ -813,11 +822,15 @@ function enableLineDrag(source, lineEl, arrowEl, doneCb) {
   };
   const done = () => {
     map.dragging.enable();
+    map.touchZoom.enable();
+    map.doubleClickZoom.enable();
+    map.scrollWheelZoom.enable();
     map.getContainer().classList.remove("dragline");
     map.off("mousemove", move);
     map.off("touchmove", move);
     map.off("mouseup", done);
     map.off("touchend", done);
+    map.off("touchcancel", done);
     draggingLine = false;
     if (source === draft) { renderDraft(); refreshDraftFields(); }
     else if (doneCb) doneCb();
@@ -826,17 +839,22 @@ function enableLineDrag(source, lineEl, arrowEl, doneCb) {
   map.on("touchmove", move);
   map.on("mouseup", done);
   map.on("touchend", done);
+  map.on("touchcancel", done);
 }
 
 function cancelLineDrag() {
   if (!draggingLine) return;
   draggingLine = false;
   map.dragging.enable();
+  map.touchZoom.enable();
+  map.doubleClickZoom.enable();
+  map.scrollWheelZoom.enable();
   map.getContainer().classList.remove("dragline");
   map.off("mousemove");
   map.off("touchmove");
   map.off("mouseup");
   map.off("touchend");
+  map.off("touchcancel");
 }
 
 let dragLatestPos = null;
