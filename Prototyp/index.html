@@ -101,7 +101,7 @@
     .toolbar .row { display: none; }
     .panel { top: 58px; left: 6px; right: 6px; bottom: 56px; width: auto; max-width: none; }
     #sightingPanel { top: auto; bottom: 0; right: 0; left: 0; width: 100%; max-width: none; max-height: 60%; z-index: 1500; }
-    .legend { top: 118px; bottom: auto; left: 8px; font-size: 11px; padding: 4px 8px; z-index: 900; }
+    .legend { top: 72px; bottom: auto; left: 8px; font-size: 11px; padding: 4px 8px; z-index: 900; }
   }
   @media (max-height: 560px) and (max-width: 600px) {
     #sightingPanel { max-height: 72%; }
@@ -606,6 +606,9 @@ function renderDraft() {
       draftLine = L.polyline([p, end], { color: "#b45309", weight: 3 }).addTo(draftMarkerLayer);
       draftArrow = arrowAt(end, draft.bearing, "#b45309", true).addTo(draftMarkerLayer);
       draftArrow.on("mousedown touchstart", (e) => { if (draft) { L.DomEvent.stopPropagation(e); enableLineDrag(draft, draftLine, draftArrow, null); } });
+      draftArrow.on("taphold", () => {});
+      draftArrow.on("contextmenu", (e) => { L.DomEvent.preventDefault(e); L.DomEvent.stopPropagation(e); enableLineDrag(draft, draftLine, draftArrow, null); });
+      draftArrow.on("longpress", (e) => { L.DomEvent.stopPropagation(e); enableLineDrag(draft, draftLine, draftArrow, null); });
     }
     dragMarker = L.marker([draft.lat, draft.lng], { icon: iconLocal, draggable: true }).addTo(draftMarkerLayer);
     dragMarker.on("drag", (e) => {
