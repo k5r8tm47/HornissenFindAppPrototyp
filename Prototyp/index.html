@@ -101,7 +101,7 @@
     .toolbar .row { display: none; }
     .panel { top: 58px; left: 6px; right: 6px; bottom: 56px; width: auto; max-width: none; }
     #sightingPanel { top: auto; bottom: 0; right: 0; left: 0; width: 100%; max-width: none; max-height: 60%; z-index: 1500; }
-    .legend { top: 72px; bottom: auto; left: 8px; font-size: 11px; padding: 4px 8px; z-index: 900; }
+    .legend { bottom: auto; left: 8px; font-size: 11px; padding: 4px 8px; z-index: 900; }
   }
   @media (max-height: 560px) and (max-width: 600px) {
     #sightingPanel { max-height: 72%; }
@@ -725,6 +725,7 @@ function refreshDraftFields() {
     btn.classList.toggle("send", ready);
     btn.classList.toggle("cancel", !ready);
     btn.style.background = ready ? "#15803d" : "#9ca3af";
+    btn.disabled = !ready;
   }
 }
 
@@ -1137,6 +1138,12 @@ function init() {
   document.getElementById("btnExport").onclick = exportData;
   document.getElementById("btnImport").onclick = () => document.getElementById("fileImport").click();
   document.getElementById("fileImport").onchange = handleImport;
+  const placeLegend = () => {
+    const r = document.querySelector(".toolbar").getBoundingClientRect();
+    document.getElementById("legend").style.top = innerWidth <= 600 ? Math.round(r.bottom + 8) + "px" : "";
+  };
+  addEventListener("resize", placeLegend);
+  placeLegend();
   startSighting();
   refresh();
   updateLegend();
