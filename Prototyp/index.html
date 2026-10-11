@@ -727,7 +727,7 @@ function openSightingPanel() {
     `<div class="field" id="fieldDir"><span class="lab">Richtung (Click auf die Karte)</span>` +
     `<div style="display:flex;gap:8px;margin:4px 0 2px; align-items:center">` +
     `<input type="number" id="inpCompass" min="0" max="359" step="1" placeholder="Kompass 0-359°" value="${draft.bearing != null ? Math.round(((draft.bearing % 360) + 360) % 360) : ''}" style="flex:1">` +
-    `<button class="small" id="btnCompass" style="min-height:40px;width:120px;background:#6b7280;color:#fff;border:none">Richtung ändern</button></div></div>` +
+    `<button class="small" id="btnCompass" style="min-height:40px;width:120px;margin:0;background:#6b7280;color:#fff;border:none">Richtung ändern</button></div></div>` +
     `<div style="display:flex;gap:8px;align-items:flex-end">` +
     `<div class="field" id="fieldNote" style="flex:1"><input type="text" id="inpNote" placeholder="Notiz (optional): Nektarfeld" value="${escapeHtml(draft.note || '')}"></div>` +
     `<div class="field" id="fieldTime" style="flex:0 0 120px"><input type="time" id="inpTime" value="${draft.time || ''}"></div>` +
