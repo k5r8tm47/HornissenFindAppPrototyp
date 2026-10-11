@@ -62,6 +62,7 @@
   .panel #fieldLoc { margin-top: 0; }
   .panel #fieldLoc .lab { margin-top: 0; }
   #sightingPanel { padding-top: 8px; }
+  #inpNote::placeholder { font-size: 12px; }
   .panel #fieldNote .lab { color: #444; font-weight: 400; }
   .panel .field.ok .lab { color: #15803d; font-weight: 600; }
   .panel #fieldNote.ok .lab { color: #15803d; font-weight: 600; }
@@ -574,7 +575,7 @@ function renderMap() {
         arrowLongPressTimer = setTimeout(() => {
           enableLineDrag(s, line, arrow, () => { save(); log(`Sichtung ${s.id}: Flugrichtung ${Math.round(bearingOf(s))}°, Länge ${lineLen(s)} m (per Drag).`); refresh(); });
           arrowLongPressTimer = null;
-        }, 450);
+        }, 200);
       });
       arrow.on("touchstart", (e) => {
         L.DomEvent.stopPropagation(e);
@@ -583,7 +584,7 @@ function renderMap() {
         arrowLongPressTimer = setTimeout(() => {
           enableLineDrag(s, line, arrow, () => { save(); log(`Sichtung ${s.id}: Flugrichtung ${Math.round(bearingOf(s))}°, Länge ${lineLen(s)} m (per Drag).`); refresh(); });
           arrowLongPressTimer = null;
-        }, 450);
+        }, 200);
       });
       arrow.on("mouseup touchend touchcancel click", (e) => {
         if (arrowLongPressTimer) {
@@ -645,7 +646,7 @@ function renderDraft() {
         draftArrowLongPressTimer = setTimeout(() => {
           enableLineDrag(draft, draftLine, draftArrow, null);
           draftArrowLongPressTimer = null;
-        }, 450);
+        }, 200);
       });
       draftArrow.on("touchstart", (e) => {
         if (!draft) return;
@@ -655,7 +656,7 @@ function renderDraft() {
         draftArrowLongPressTimer = setTimeout(() => {
           enableLineDrag(draft, draftLine, draftArrow, null);
           draftArrowLongPressTimer = null;
-        }, 450);
+        }, 200);
       });
       draftArrow.on("mouseup touchend touchcancel click", (e) => {
         if (draftArrowLongPressTimer) {
@@ -722,13 +723,15 @@ function cancelSighting() {
 function openSightingPanel() {
   const form = document.getElementById("sightingForm");
   form.innerHTML =
-    `<div class="field" id="fieldLoc"><span class="lab">Standort (Click auf die Karte)</span></div>` +
+    `<div class="field" id="fieldLoc"><span class="lab">Standort (Click auf die Karte, Ziehen zum verschieben)</span></div>` +
     `<div class="field" id="fieldDir"><span class="lab">Richtung (Click auf die Karte)</span>` +
-    `<div style="display:flex;gap:6px;margin:4px 0 2px; align-items:center">` +
+    `<div style="display:flex;gap:8px;margin:4px 0 2px; align-items:center">` +
     `<input type="number" id="inpCompass" min="0" max="359" step="1" placeholder="Kompass 0-359°" value="${draft.bearing != null ? Math.round(((draft.bearing % 360) + 360) % 360) : ''}" style="flex:1">` +
-    `<button class="small" id="btnCompass" style="min-height:40px">Richtung setzen</button></div></div>` +
-    `<div class="field" id="fieldTime"><input type="time" id="inpTime" value="${draft.time || ''}"></div>` +
-    `<div class="field" id="fieldNote"><input type="text" id="inpNote" placeholder="Notiz (optional): z.B. am Nektarfeld" value="${escapeHtml(draft.note || '')}"></div>` +
+    `<button class="small" id="btnCompass" style="min-height:40px;width:120px;background:#6b7280;color:#fff;border:none">Richtung ändern</button></div></div>` +
+    `<div style="display:flex;gap:8px;align-items:flex-end">` +
+    `<div class="field" id="fieldNote" style="flex:1"><input type="text" id="inpNote" placeholder="Notiz (optional): am Nektarfeld" value="${escapeHtml(draft.note || '')}"></div>` +
+    `<div class="field" id="fieldTime" style="flex:0 0 120px"><input type="time" id="inpTime" value="${draft.time || ''}"></div>` +
+    `</div>` +
     `<div class="btns">` +
     `<button class="action cancel" id="btnSend">Senden</button>` +
     `<button class="action cancel" id="btnCancel" style="background:#6b7280">Löschen</button></div>`;
