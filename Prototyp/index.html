@@ -723,7 +723,7 @@ function cancelSighting() {
 function openSightingPanel() {
   const form = document.getElementById("sightingForm");
   form.innerHTML =
-    `<div class="field" id="fieldLoc"><span class="lab">Standort (Click auf die Karte, Ziehen zum verschieben)</span></div>` +
+    `<div class="field" id="fieldLoc"><span class="lab">Standort (Click auf die Karte, Ziehen zum ändern)</span></div>` +
     `<div class="field" id="fieldDir"><span class="lab">Richtung (Click auf die Karte)</span>` +
     `<div style="display:flex;gap:8px;margin:4px 0 2px; align-items:center">` +
     `<input type="number" id="inpCompass" min="0" max="359" step="1" placeholder="Kompass 0-359°" value="${draft.bearing != null ? Math.round(((draft.bearing % 360) + 360) % 360) : ''}" style="flex:1">` +
