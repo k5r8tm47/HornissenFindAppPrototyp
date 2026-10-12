@@ -1216,6 +1216,14 @@ function init() {
   startSighting();
   refresh();
   updateLegend();
+  // Aktuellen Standort abfragen und Karte dort starten; bei Ablehnung/Fehler bleibt der Standard-View.
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      pos => map.setView([pos.coords.latitude, pos.coords.longitude], 15),
+      () => {},
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
+    );
+  }
   selfTest();
   if (new URLSearchParams(location.search).has("adm")) {
     role = "admin";
