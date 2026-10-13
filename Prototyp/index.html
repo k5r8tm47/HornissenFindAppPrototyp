@@ -89,6 +89,8 @@
   .legend .lg-own { background: #c22; }
   .legend .lg-other { background: #2563eb; }
   .legend .lg-nest { background: #fff; border: 2px solid #ea580c; border-radius: 50%; }
+  .legend .lg-nest-yellow { background: #fff; border: 2px solid #eab308; }
+  .legend .lg-nest-green { background: #fff; border: 2px solid #16a34a; }
   .legend .lg-line { width: 16px; height: 3px; border-radius: 2px; }
   .legend .lg-line-own { background: #b45309; }
   .legend .lg-line-other { background: #2563eb; }
@@ -149,7 +151,9 @@
   <div id="lgOwnDir"><span class="lg lg-line lg-line-own" style="vertical-align:2px"></span> Eigene Flugrichtung</div>
   <div id="lgOtherDir" class="lg-admin"><span class="lg lg-line lg-line-other" style="vertical-align:2px"></span> Flugrichtung anderer</div>
   <div id="lgGray" class="lg-admin"><span class="lg lg-line lg-line-gray" style="vertical-align:2px"></span> Linie grau (Bereich nicht zugänglich)</div>
-  <div id="lgNest" class="lg-admin"><span class="lg lg-nest"></span> Wahrscheinlicher Nestbereich</div>
+  <div id="lgNest"><span class="lg lg-nest"></span> Nest nicht gefunden</div>
+  <div class="lg-admin"><span class="lg lg-nest-yellow"></span> Nest gefunden</div>
+  <div class="lg-admin"><span class="lg lg-nest-green"></span> Nest entfernt</div>
   <div id="lgOwn"><span class="lg lg-own"></span> Eigene Sichtung</div>
   <div id="lgOther" class="lg-admin"><span class="lg lg-other"></span> Sichtung anderer</div>
 </div>
@@ -723,8 +727,8 @@ function cancelSighting() {
 function openSightingPanel() {
   const form = document.getElementById("sightingForm");
   form.innerHTML =
-    `<div class="field" id="fieldLoc"><span class="lab">Standort (Click auf die Karte, Ziehen zum ändern)</span></div>` +
-    `<div class="field" id="fieldDir"><span class="lab">Richtung (Click auf die Karte)</span>` +
+    `<div class="field" id="fieldLoc"><span class="lab">Standort (Klick auf die Karte, Ziehen zum ändern)</span></div>` +
+    `<div class="field" id="fieldDir"><span class="lab">Richtung (Klick auf die Karte)</span>` +
     `<div style="display:flex;gap:8px;margin:4px 0 2px; align-items:center">` +
     `<input type="number" id="inpCompass" min="0" max="359" step="1" placeholder="Kompass 0-359°" value="${draft.bearing != null ? Math.round(((draft.bearing % 360) + 360) % 360) : ''}" style="flex:1">` +
     `<button class="small" id="btnCompass" style="min-height:40px;width:120px;margin:0;background:#6b7280;color:#fff;border:none">Richtung ändern</button></div></div>` +
